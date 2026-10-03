@@ -1,0 +1,524 @@
+{
+  "version": 4,
+  "updated": "2026-10-01",
+  "source": "BambuStudio master da8b44e (2026-09-28) + OrcaSlicer 03377a0 (2026-10-01) BBL machine profiles (base 0.4 nozzle + fdm_bbl_3dp_001/002_common resolved); park Y verified against native machine_end_gcode / real A1 gcode; toolhead footprint (draw_*) are app estimates - see PRINTER_DB_SOURCES.md | schema v4: grouped machine/kinematics/toolhead",
+  "default": "A1",
+  "provenance_levels": {
+    "verified_gcode": {
+      "label": "verified",
+      "description": "Confirmed in a real sliced file on hardware"
+    },
+    "end_gcode_park": {
+      "label": "from end gcode",
+      "description": "Position used by the official machine_end_gcode (firmware-accepted), not yet exercised by an ejection"
+    },
+    "estimate": {
+      "label": "estimated",
+      "description": "Not confirmed - verify on hardware before unattended use"
+    }
+  },
+  "structures": {
+    "bedslinger": {
+      "label": "Bedslinger",
+      "mechanism_short": "bed slides under the toolhead"
+    },
+    "corexy": {
+      "label": "CoreXY",
+      "mechanism_short": "toolhead moves, bed fixed"
+    }
+  },
+  "suitability_levels": {
+    "verified": {
+      "label": "Verified",
+      "description": "End-to-end verified on this model (native gcode analyzed, user-confirmed mechanics)"
+    },
+    "expected": {
+      "label": "Expected",
+      "description": "Identical mechanics (bedslinger, same toolhead family) - expected to work, not physically tested"
+    },
+    "needs-test": {
+      "label": "Needs a test print",
+      "description": "Mechanism plausible (the toolhead pushes via its own motion instead of bed motion) but NOT verified: firmware Y-limits behind plate, enclosed-chamber cooldown and front clearance must be checked on the real machine"
+    }
+  },
+  "printers": {
+    "A1": {
+      "name": "A1",
+      "machine": {
+        "printable": {
+          "x": 256.0,
+          "y": 256.0,
+          "z": 256.0
+        },
+        "structure": "bedslinger",
+        "bed_exclude": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      "kinematics": {
+        "rear_command_limit": 262.5,
+        "rear_command_limit_source": "verified_gcode",
+        "front_lip_y": 0.0
+      },
+      "toolhead": {
+        "body_height": 4.76,
+        "clearance_radius": 73.0,
+        "dist_to_rod": 56.5,
+        "footprint": {
+          "width": 36.0,
+          "depth": 28.0,
+          "estimated": true
+        }
+      },
+      "suitability": "verified",
+      "suitability_note": "Reference platform: 7-step ejection engineered and gcode-verified on it",
+      "source": "BambuStudio/OrcaSlicer GM030 + fdm_bbl_3dp_001_common; native A1 gcode: park/wipe at Y=262.5 (Q10 kinematics)"
+    },
+    "A1 mini": {
+      "name": "A1 mini",
+      "machine": {
+        "printable": {
+          "x": 180.0,
+          "y": 180.0,
+          "z": 180.0
+        },
+        "structure": "bedslinger",
+        "bed_exclude": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      "kinematics": {
+        "rear_command_limit": 185.0,
+        "rear_command_limit_source": "end_gcode_park",
+        "front_lip_y": 0.0
+      },
+      "toolhead": {
+        "body_height": 4.76,
+        "clearance_radius": 73.0,
+        "dist_to_rod": 56.5,
+        "footprint": {
+          "width": 36.0,
+          "depth": 28.0,
+          "estimated": true
+        }
+      },
+      "suitability": "expected",
+      "suitability_note": "Same bedslinger mechanics + same toolhead family; smaller bed fits fewer/smaller objects",
+      "source": "BambuStudio/OrcaSlicer GM020 + common; native end-gcode park Y=185"
+    },
+    "A2L": {
+      "name": "A2L",
+      "machine": {
+        "printable": {
+          "x": 330.0,
+          "y": 320.0,
+          "z": 325.0
+        },
+        "structure": "bedslinger",
+        "bed_exclude": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      "kinematics": {
+        "rear_command_limit": 326.0,
+        "rear_command_limit_source": "estimate",
+        "front_lip_y": 0.0
+      },
+      "toolhead": {
+        "body_height": 4.76,
+        "clearance_radius": 73.0,
+        "dist_to_rod": 56.5,
+        "footprint": {
+          "width": 36.0,
+          "depth": 28.0,
+          "estimated": true
+        }
+      },
+      "suitability": "expected",
+      "suitability_note": "Bedslinger with A1-style toolhead; large plate = more copies per cycle; no behind-plate park in native end gcode - verify park Y",
+      "source": "BambuStudio/OrcaSlicer GM056 + common; no behind-plate park in end gcode (park Y estimated)"
+    },
+    "X1C": {
+      "name": "X1C",
+      "machine": {
+        "printable": {
+          "x": 256.0,
+          "y": 256.0,
+          "z": 250.0
+        },
+        "structure": "corexy",
+        "bed_exclude": {
+          "x": 18.0,
+          "y": 28.0
+        }
+      },
+      "kinematics": {
+        "rear_command_limit": 265.0,
+        "rear_command_limit_source": "end_gcode_park",
+        "front_lip_y": 0.0
+      },
+      "toolhead": {
+        "body_height": 4.2,
+        "clearance_radius": 68.0,
+        "dist_to_rod": 33.0,
+        "footprint": {
+          "width": 36.0,
+          "depth": 25.0,
+          "estimated": true
+        }
+      },
+      "suitability": "needs-test",
+      "suitability_note": "Park Y=265 behind the plate is used by the native end gcode (reachable); front push, enclosed-chamber cooldown and front clearance unverified",
+      "source": "BambuStudio/OrcaSlicer GM001 + fdm_bbl_3dp_001_common; native end-gcode park Y=265"
+    },
+    "X1": {
+      "name": "X1",
+      "machine": {
+        "printable": {
+          "x": 256.0,
+          "y": 256.0,
+          "z": 250.0
+        },
+        "structure": "corexy",
+        "bed_exclude": {
+          "x": 18.0,
+          "y": 28.0
+        }
+      },
+      "kinematics": {
+        "rear_command_limit": 265.0,
+        "rear_command_limit_source": "end_gcode_park",
+        "front_lip_y": 0.0
+      },
+      "toolhead": {
+        "body_height": 4.2,
+        "clearance_radius": 68.0,
+        "dist_to_rod": 33.0,
+        "footprint": {
+          "width": 36.0,
+          "depth": 25.0,
+          "estimated": true
+        }
+      },
+      "suitability": "needs-test",
+      "suitability_note": "Park Y=265 behind the plate is used by the native end gcode (reachable); front push, enclosed-chamber cooldown and front clearance unverified",
+      "source": "BambuStudio/OrcaSlicer GM003 + fdm_bbl_3dp_001_common; native end-gcode park Y=265"
+    },
+    "X1E": {
+      "name": "X1E",
+      "machine": {
+        "printable": {
+          "x": 256.0,
+          "y": 256.0,
+          "z": 250.0
+        },
+        "structure": "corexy",
+        "bed_exclude": {
+          "x": 18.0,
+          "y": 28.0
+        }
+      },
+      "kinematics": {
+        "rear_command_limit": 265.0,
+        "rear_command_limit_source": "end_gcode_park",
+        "front_lip_y": 0.0
+      },
+      "toolhead": {
+        "body_height": 4.2,
+        "clearance_radius": 68.0,
+        "dist_to_rod": 33.0,
+        "footprint": {
+          "width": 36.0,
+          "depth": 25.0,
+          "estimated": true
+        }
+      },
+      "suitability": "needs-test",
+      "suitability_note": "Park Y=265 behind the plate is used by the native end gcode (reachable); front push, enclosed-chamber cooldown and front clearance unverified",
+      "source": "BambuStudio/OrcaSlicer GM026 + fdm_bbl_3dp_001_common; native end-gcode park Y=265"
+    },
+    "P1P": {
+      "name": "P1P",
+      "machine": {
+        "printable": {
+          "x": 256.0,
+          "y": 256.0,
+          "z": 250.0
+        },
+        "structure": "corexy",
+        "bed_exclude": {
+          "x": 18.0,
+          "y": 28.0
+        }
+      },
+      "kinematics": {
+        "rear_command_limit": 265.0,
+        "rear_command_limit_source": "end_gcode_park",
+        "front_lip_y": 0.0
+      },
+      "toolhead": {
+        "body_height": 4.2,
+        "clearance_radius": 68.0,
+        "dist_to_rod": 33.0,
+        "footprint": {
+          "width": 36.0,
+          "depth": 25.0,
+          "estimated": true
+        }
+      },
+      "suitability": "needs-test",
+      "suitability_note": "Open frame = faster cooldown than X1 (no enclosure); park Y=265 reachable, front push unverified",
+      "source": "BambuStudio/OrcaSlicer GM013 + fdm_bbl_3dp_001_common; native end-gcode park Y=265"
+    },
+    "P1S": {
+      "name": "P1S",
+      "machine": {
+        "printable": {
+          "x": 256.0,
+          "y": 256.0,
+          "z": 250.0
+        },
+        "structure": "corexy",
+        "bed_exclude": {
+          "x": 18.0,
+          "y": 28.0
+        }
+      },
+      "kinematics": {
+        "rear_command_limit": 265.0,
+        "rear_command_limit_source": "end_gcode_park",
+        "front_lip_y": 0.0
+      },
+      "toolhead": {
+        "body_height": 4.2,
+        "clearance_radius": 68.0,
+        "dist_to_rod": 33.0,
+        "footprint": {
+          "width": 36.0,
+          "depth": 25.0,
+          "estimated": true
+        }
+      },
+      "suitability": "needs-test",
+      "suitability_note": "Park Y=265 reachable; enclosed chamber slows the 45C cooldown wait, front push unverified",
+      "source": "BambuStudio/OrcaSlicer GM014 + fdm_bbl_3dp_001_common; native end-gcode park Y=265"
+    },
+    "P2S": {
+      "name": "P2S",
+      "machine": {
+        "printable": {
+          "x": 256.0,
+          "y": 256.0,
+          "z": 256.0
+        },
+        "structure": "corexy",
+        "bed_exclude": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      "kinematics": {
+        "rear_command_limit": 262.0,
+        "rear_command_limit_source": "estimate",
+        "front_lip_y": 0.0
+      },
+      "toolhead": {
+        "body_height": 4.2,
+        "clearance_radius": 72.0,
+        "dist_to_rod": 36.5,
+        "footprint": {
+          "width": 36.0,
+          "depth": 25.0,
+          "estimated": true
+        }
+      },
+      "suitability": "needs-test",
+      "suitability_note": "No behind-plate park in native end gcode - park Y is an estimate; enclosed chamber and front push unverified",
+      "source": "BambuStudio GM049 (clearance radius 72; OrcaSlicer still 68) + fdm_bbl_3dp_001_common; no behind-plate park in end gcode (park Y estimated)"
+    },
+    "X2D": {
+      "name": "X2D",
+      "machine": {
+        "printable": {
+          "x": 256.0,
+          "y": 256.0,
+          "z": 261.0
+        },
+        "structure": "corexy",
+        "bed_exclude": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      "kinematics": {
+        "rear_command_limit": 262.0,
+        "rear_command_limit_source": "estimate",
+        "front_lip_y": 0.0
+      },
+      "toolhead": {
+        "body_height": 4.0,
+        "clearance_radius": 60.0,
+        "dist_to_rod": 33.0,
+        "footprint": {
+          "width": 36.0,
+          "depth": 25.0,
+          "estimated": true
+        }
+      },
+      "suitability": "needs-test",
+      "suitability_note": "No behind-plate park in native end gcode - park Y is an estimate; front push unverified",
+      "source": "BambuStudio/OrcaSlicer GM045 + fdm_bbl_3dp_001_common; no behind-plate park in end gcode (park Y estimated)"
+    },
+    "H2S": {
+      "name": "H2S",
+      "machine": {
+        "printable": {
+          "x": 340.0,
+          "y": 320.0,
+          "z": 340.0
+        },
+        "structure": "corexy",
+        "bed_exclude": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      "kinematics": {
+        "rear_command_limit": 326.0,
+        "rear_command_limit_source": "estimate",
+        "front_lip_y": 0.0
+      },
+      "toolhead": {
+        "body_height": 4.0,
+        "clearance_radius": 81.0,
+        "dist_to_rod": 56.0,
+        "footprint": {
+          "width": 40.0,
+          "depth": 28.0,
+          "estimated": true
+        }
+      },
+      "suitability": "needs-test",
+      "suitability_note": "Larger toolhead (clearance radius 81); no behind-plate park in native end gcode - park Y estimated, verify on machine",
+      "source": "BambuStudio/OrcaSlicer GM037 + fdm_bbl_3dp_002_common; no behind-plate park in end gcode (park Y estimated)"
+    },
+    "H2D": {
+      "name": "H2D",
+      "machine": {
+        "printable": {
+          "x": 350.0,
+          "y": 320.0,
+          "z": 325.0
+        },
+        "structure": "corexy",
+        "bed_exclude": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      "kinematics": {
+        "rear_command_limit": 326.0,
+        "rear_command_limit_source": "estimate",
+        "front_lip_y": 0.0
+      },
+      "toolhead": {
+        "body_height": 4.0,
+        "clearance_radius": 96.0,
+        "dist_to_rod": 50.0,
+        "footprint": {
+          "width": 40.0,
+          "depth": 28.0,
+          "estimated": true
+        }
+      },
+      "suitability": "needs-test",
+      "suitability_note": "Dual-nozzle toolhead (clearance radius 96); no behind-plate park in native end gcode - park Y estimated, verify on machine",
+      "source": "BambuStudio/OrcaSlicer GM033 + fdm_bbl_3dp_002_common; no behind-plate park in end gcode (park Y estimated)"
+    },
+    "H2D Pro": {
+      "name": "H2D Pro",
+      "machine": {
+        "printable": {
+          "x": 350.0,
+          "y": 320.0,
+          "z": 325.0
+        },
+        "structure": "corexy",
+        "bed_exclude": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      "kinematics": {
+        "rear_command_limit": 326.0,
+        "rear_command_limit_source": "estimate",
+        "front_lip_y": 0.0
+      },
+      "toolhead": {
+        "body_height": 4.0,
+        "clearance_radius": 96.0,
+        "dist_to_rod": 50.0,
+        "footprint": {
+          "width": 40.0,
+          "depth": 28.0,
+          "estimated": true
+        }
+      },
+      "suitability": "needs-test",
+      "suitability_note": "Same conditions as H2D",
+      "source": "BambuStudio/OrcaSlicer GM051 + fdm_bbl_3dp_002_common; no behind-plate park (park Y estimated)"
+    },
+    "H2C": {
+      "name": "H2C",
+      "machine": {
+        "printable": {
+          "x": 330.0,
+          "y": 320.0,
+          "z": 325.0
+        },
+        "structure": "corexy",
+        "bed_exclude": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      "kinematics": {
+        "rear_command_limit": 326.0,
+        "rear_command_limit_source": "estimate",
+        "front_lip_y": 0.0
+      },
+      "toolhead": {
+        "body_height": 4.0,
+        "clearance_radius": 96.0,
+        "dist_to_rod": 50.0,
+        "footprint": {
+          "width": 40.0,
+          "depth": 28.0,
+          "estimated": true
+        }
+      },
+      "suitability": "needs-test",
+      "suitability_note": "Same conditions as H2D on a slightly smaller bed",
+      "source": "BambuStudio/OrcaSlicer GM041 + fdm_bbl_3dp_002_common; no behind-plate park (park Y estimated)"
+    }
+  },
+  "aliases": {
+    "N1": "A1 mini",
+    "N2S": "A1",
+    "N9": "A2L",
+    "C11": "P1P",
+    "C12": "P1S",
+    "N7": "P2S",
+    "BL-P001": "X1C",
+    "BL-P002": "X1",
+    "C13": "X1E",
+    "N6": "X2D",
+    "O1S": "H2S",
+    "O1D": "H2D",
+    "O1E": "H2D Pro",
+    "O1C2": "H2C"
+  }
+}

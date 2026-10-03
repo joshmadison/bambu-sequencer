@@ -1,0 +1,38 @@
+# Version control / repo metadata
+.git/
+.gitignore
+.dockerignore
+
+# Python caches / build artifacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# Test / lint caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Virtual environments
+venv/
+.venv/
+
+# Not needed in the runtime image
+tests/
+requirements-dev.txt
+ruff.toml
+README.md
+PRINTER_DB_SOURCES.md
+LICENSE
+
+# Secrets
+.env
+.env.*
+*.pem
+*.key
+
+# OS junk
+.DS_Store
+Thumbs.db

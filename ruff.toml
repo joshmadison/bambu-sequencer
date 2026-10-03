@@ -1,0 +1,17 @@
+# Lint configuration (ruff). Run: ruff check app tests
+target-version = "py312"
+
+[lint]
+select = [
+    "E4",  # imports (E401, E402)
+    "E7",  # statements (E711, E712, E722, E741 ...)
+    "E9",  # runtime errors (E901, E902)
+    "F",   # pyflakes
+    "I",   # import sorting
+    "B",   # flake8-bugbear
+    "UP",  # pyupgrade
+]
+ignore = [
+    # FastAPI's documented parameter style: File(...), Form(...), Query(...)
+    "B008",
+]

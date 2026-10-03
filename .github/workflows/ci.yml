@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Lint (ruff)
+        run: python -m ruff check app tests
+
+      - name: Tests (pytest)
+        run: python -m pytest tests -q
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t bambu-sequencer:ci .
+
+      - name: Smoke test
+        run: |
+          docker run -d --name smoke -p 8080:8000 bambu-sequencer:ci
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:8080/api/printers > /dev/null; then
+              echo "smoke OK"; exit 0
+            fi
+            sleep 1
+          done
+          echo "smoke FAILED"; docker logs smoke; exit 1

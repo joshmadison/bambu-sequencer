@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>bambu-sequencer</title>
+<style>
+:root {
+  --surface-0:#0d0f13; --surface-1:#151820; --surface-2:#0a0c10;
+  --line-1:#262b36; --line-2:#333a48;
+  --text-1:#eef1f6; --text-2:#a9b1c2; --text-3:#7d8595;
+  --accent:#00c853; --accent-dim:#00ae42;
+  --warning:#f0a232; --danger:#f56c6c; --info:#5aa9ff;
+  --radius-1:8px; --radius-2:12px; --radius-3:16px;
+  --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:24px; --space-6:32px;
+  --shadow-1:0 1px 3px rgb(0 0 0/.45); --shadow-2:0 10px 32px rgb(0 0 0/.4);
+  --focus-ring:0 0 0 2px var(--surface-0), 0 0 0 4px var(--accent);
+}
+* { box-sizing:border-box; }
+html { -webkit-text-size-adjust:100%; }
+body { font-family:system-ui,-apple-system,'Segoe UI',sans-serif; background:var(--surface-0); color:var(--text-1); margin:0; font-size:15px; line-height:1.5; }
+a { color:var(--accent); }
+:focus-visible { outline:none; box-shadow:var(--focus-ring); border-radius:var(--radius-1); }
+::selection { background:rgba(0,200,83,.25); }
+
+/* layout */
+.wrap { max-width:1120px; margin:0 auto; padding:var(--space-5); }
+header.top { display:flex; align-items:center; gap:var(--space-3); padding:var(--space-4) 0 var(--space-5); }
+.logo { width:34px; height:34px; border-radius:10px; background:linear-gradient(135deg,var(--accent),#008c3a); display:grid; place-items:center; flex-shrink:0; }
+.logo svg { width:20px; height:20px; }
+h1 { font-size:1.35rem; margin:0; letter-spacing:-.02em; }
+h1 b { color:var(--accent); font-weight:650; }
+.tagline { color:var(--text-3); font-size:.85rem; }
+
+/* page tabs */
+.tabs { display:flex; gap:var(--space-2); margin-bottom:var(--space-5); border-bottom:1px solid var(--line-1); }
+.tab { background:none; border:0; border-bottom:2px solid transparent; color:var(--text-3); font-size:.92rem; font-weight:600; padding:9px 16px; cursor:pointer; font-family:inherit; margin-bottom:-1px; }
+.tab:hover { color:var(--text-1); }
+.tab.is-active { color:var(--accent); border-bottom-color:var(--accent); }
+
+/* printers page */
+table.printers { width:100%; border-collapse:collapse; font-size:.87rem; margin-top:var(--space-2); }
+table.printers th { text-align:left; color:var(--text-3); font-size:.75rem; text-transform:uppercase; letter-spacing:.06em; padding:8px 10px 8px 0; border-bottom:1px solid var(--line-2); font-weight:650; }
+table.printers td { padding:9px 10px 9px 0; border-bottom:1px solid var(--line-1); vertical-align:top; }
+table.printers tr:last-child td { border-bottom:0; }
+table.printers td.pname { font-weight:650; color:var(--text-1); white-space:nowrap; }
+table.printers td .sub { color:var(--text-3); font-size:.75rem; display:block; margin-top:1px; }
+table.printers .mono { font-variant-numeric:tabular-nums; white-space:nowrap; }
+table.printers .ok-v { color:var(--accent); }
+table.printers .ok-e { color:var(--accent); opacity:.75; }
+
+/* grid: single column until a file is loaded */
+.grid { display:grid; grid-template-columns:1fr; gap:var(--space-5); align-items:start; }
+body.has-file .grid { grid-template-columns:minmax(0,1fr) 360px; }
+.side { position:sticky; top:var(--space-4); display:flex; flex-direction:column; gap:var(--space-4); }
+@media (max-width:920px) { body.has-file .grid { grid-template-columns:1fr; } .side { position:static; } }
+
+/* cards */
+.card { background:var(--surface-1); border:1px solid var(--line-1); border-radius:var(--radius-3); padding:var(--space-5); box-shadow:var(--shadow-1); }
+.card h2 { font-size:1.02rem; margin:0 0 var(--space-4); display:flex; align-items:center; gap:var(--space-2); }
+.card + .card { margin-top:var(--space-4); }
+.hint { color:var(--text-3); font-size:.82rem; margin:var(--space-2) 0 0; }
+
+/* dropzone */
+.drop { border:1.5px dashed var(--line-2); border-radius:var(--radius-2); padding:var(--space-6); text-align:center; transition:border-color .15s, background .15s; cursor:pointer; background:var(--surface-2); }
+.drop:hover, .drop.is-over { border-color:var(--accent); background:rgba(0,200,83,.05); }
+.drop svg { width:38px; height:38px; color:var(--text-3); margin-bottom:var(--space-2); }
+.drop .dt { font-size:.95rem; color:var(--text-2); }
+.drop .dt b { color:var(--text-1); }
+.drop.is-invalid { border-color:var(--danger); background:rgba(245,108,108,.06); }
+.drop .fileinfo { display:none; }
+.drop.has-file .fileinfo { display:block; }
+.drop.has-file .placeholder { display:none; }
+.fileinfo .fname { font-weight:600; word-break:break-all; }
+.fileinfo .fmeta { color:var(--text-3); font-size:.8rem; margin-top:2px; }
+
+/* buttons */
+.btn { background:var(--accent); color:#04310f; border:0; padding:11px 20px; border-radius:var(--radius-2); font-size:.95rem; font-weight:650; cursor:pointer; width:100%; margin-top:var(--space-4); transition:filter .15s, transform .1s; font-family:inherit; }
+.btn:hover { filter:brightness(1.12); }
+.btn:active { transform:scale(.985); }
+.btn:disabled { opacity:.45; cursor:not-allowed; filter:none; transform:none; }
+.btn-ghost { background:var(--surface-2); color:var(--text-2); border:1px solid var(--line-2); }
+.btn-ghost:hover { color:var(--text-1); border-color:var(--line-2); filter:none; }
+.btn-sm { padding:7px 14px; font-size:.83rem; font-weight:600; width:auto; margin-top:0; }
+.btn-row { display:flex; gap:var(--space-2); margin-top:0; }
+
+/* fieldsets */
+fieldset.group { border:1px solid var(--line-1); border-radius:var(--radius-2); padding:var(--space-3) var(--space-4) var(--space-4); margin:var(--space-4) 0 0; min-width:0; }
+fieldset.group legend { font-size:.8rem; text-transform:uppercase; letter-spacing:.08em; color:var(--text-3); padding:0 6px; font-weight:650; }
+.field { margin-top:var(--space-3); }
+.field label { display:block; font-size:.87rem; color:var(--text-2); margin-bottom:4px; font-weight:550; }
+.field input[type=number] { width:100%; padding:9px 12px; background:var(--surface-2); color:var(--text-1); border:1px solid var(--line-2); border-radius:var(--radius-1); font-size:.95rem; font-family:inherit; }
+.field input[type=number]:hover { border-color:var(--line-2); }
+.field small.hint-inline { display:block; color:var(--text-3); font-size:.76rem; margin-top:3px; }
+.two { display:grid; grid-template-columns:1fr 1fr; gap:var(--space-3); }
+
+/* badges + alerts */
+.badge { display:inline-flex; align-items:center; gap:5px; font-size:.75rem; font-weight:650; padding:3px 9px; border-radius:999px; border:1px solid; }
+.badge.ok { color:var(--accent); border-color:rgba(0,200,83,.4); background:rgba(0,200,83,.08); }
+.badge.warn { color:var(--warning); border-color:rgba(240,162,50,.4); background:rgba(240,162,50,.08); }
+.badge.err { color:var(--danger); border-color:rgba(245,108,108,.4); background:rgba(245,108,108,.08); }
+.badge.info { color:var(--info); border-color:rgba(90,169,255,.4); background:rgba(90,169,255,.08); }
+.alert { display:flex; gap:9px; align-items:flex-start; padding:10px 13px; border-radius:var(--radius-1); font-size:.84rem; margin-top:var(--space-3); border:1px solid; }
+.alert.warn { color:#f5c67a; border-color:rgba(240,162,50,.35); background:rgba(240,162,50,.07); }
+.alert.err { color:#f8a0a0; border-color:rgba(245,108,108,.35); background:rgba(245,108,108,.07); }
+.alert.info { color:#a8ccff; border-color:rgba(90,169,255,.35); background:rgba(90,169,255,.07); }
+.alert b { font-weight:650; }
+.alert .retry { margin-left:auto; flex-shrink:0; }
+
+/* stats table */
+.stats-flex { display:flex; gap:var(--space-4); flex-wrap:wrap; }
+.stats-thumb { width:100%; max-width:280px; border-radius:var(--radius-2); background:var(--surface-2); border:1px solid var(--line-1); display:block; }
+table.stat { width:100%; border-collapse:collapse; font-size:.88rem; }
+table.stat td { padding:4px 10px 4px 0; vertical-align:top; }
+table.stat td:first-child { color:var(--text-3); white-space:nowrap; width:1%; }
+table.stat td:last-child { color:var(--text-1); }
+.table-scroll { overflow-x:auto; }
+table.objtable { width:100%; border-collapse:collapse; font-size:.84rem; }
+table.objtable th { text-align:left; color:var(--text-3); font-size:.72rem; text-transform:uppercase; letter-spacing:.05em; padding:6px 10px 6px 0; border-bottom:1px solid var(--line-2); font-weight:650; white-space:nowrap; }
+table.objtable td { padding:8px 10px 8px 0; border-bottom:1px solid var(--line-1); vertical-align:middle; }
+table.objtable tr:last-child td { border-bottom:0; }
+table.objtable .objname { font-weight:600; white-space:nowrap; }
+table.objtable .mono { font-variant-numeric:tabular-nums; white-space:nowrap; }
+.plate-totals { display:flex; gap:var(--space-5); flex-wrap:wrap; margin-top:var(--space-3); padding:var(--space-3) var(--space-4); background:var(--surface-2); border:1px solid var(--line-1); border-radius:var(--radius-2); font-size:.84rem; }
+/* plate contents card */
+.plate-flex { display:flex; gap:var(--space-4); flex-wrap:wrap; align-items:flex-start; }
+.plate-visual { flex:0 0 220px; }
+.plate-visual .stats-thumb { width:100%; max-width:220px; }
+.plate-data { flex:1 1 280px; min-width:0; }
+.plate-fil-colors { display:flex; gap:6px; flex-wrap:wrap; margin-top:var(--space-2); }
+.plate-block + .plate-block { border-top:1px solid var(--line-1); margin-top:var(--space-5); padding-top:var(--space-4); }
+.plate-prints { margin-top:var(--space-3); max-width:240px; }
+.plate-tabs { display:flex; gap:6px; flex-wrap:wrap; }
+.plate-tabs button { background:var(--surface-2); color:var(--text-2); border:1px solid var(--line-2); border-radius:999px; padding:3px 10px; font-size:.75rem; font-weight:600; cursor:pointer; font-family:inherit; }
+.plate-tabs button:hover { color:var(--text-1); }
+.plate-tabs button.is-active { color:var(--accent); border-color:rgba(0,200,83,.5); background:rgba(0,200,83,.08); }
+.total-check { margin-top:var(--space-3); display:flex; gap:var(--space-2); flex-wrap:wrap; align-items:center; }
+.plate-totals .pt-item { color:var(--text-2); }
+.plate-totals .pt-item b { color:var(--text-1); font-weight:650; }
+.total-card { background:var(--surface-2); border:1px solid var(--line-1); border-radius:var(--radius-2); padding:var(--space-4); margin-top:var(--space-4); }
+.total-card .tt { font-size:.78rem; text-transform:uppercase; letter-spacing:.08em; color:var(--text-3); font-weight:650; margin-bottom:var(--space-2); }
+.total-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:var(--space-3); }
+.total-grid .cell.wide { grid-column:1 / -1; }
+.total-grid .cell .v { font-size:1.25rem; font-weight:700; letter-spacing:-.01em; }
+.total-grid .cell .k { color:var(--text-3); font-size:.75rem; margin-top:1px; }
+.fil-colors { display:flex; gap:6px; flex-wrap:wrap; margin-top:var(--space-3); }
+.fil-chip { display:inline-flex; align-items:center; gap:5px; font-size:.75rem; color:var(--text-2); background:var(--surface-1); border:1px solid var(--line-1); border-radius:999px; padding:3px 9px; }
+.fil-chip .dot { width:9px; height:9px; border-radius:50%; border:1px solid rgba(255,255,255,.25); }
+
+/* result */
+#result:empty { display:none; }
+.result-ok { border:1px solid rgba(0,200,83,.4); background:rgba(0,200,83,.07); border-radius:var(--radius-2); padding:var(--space-4); margin-top:var(--space-4); }
+.result-ok .dl { display:flex; align-items:center; gap:10px; margin-bottom:var(--space-2); }
+.result-ok svg.check { width:22px; height:22px; color:var(--accent); flex-shrink:0; }
+.stale-note { display:none; border:1px solid rgba(240,162,50,.4); background:rgba(240,162,50,.07); color:#f5c67a; border-radius:var(--radius-2); padding:var(--space-3) var(--space-4); margin-top:var(--space-4); font-size:.85rem; }
+.stale-note.show { display:flex; gap:9px; align-items:center; }
+.stale-note button { margin-left:auto; }
+
+/* progress */
+.progress { display:none; height:6px; background:var(--surface-2); border-radius:999px; overflow:hidden; margin-top:var(--space-4); }
+.progress.show { display:block; }
+.progress .bar { height:100%; width:0%; background:linear-gradient(90deg,var(--accent-dim),var(--accent)); border-radius:999px; transition:width .2s; }
+.progress-label { display:none; color:var(--text-3); font-size:.78rem; margin-top:5px; }
+.progress-label.show { display:block; }
+
+/* animation */
+.anim-head { display:flex; align-items:center; gap:var(--space-2); flex-wrap:wrap; margin-bottom:var(--space-3); }
+canvas#animCanvas { width:100%; border-radius:var(--radius-2); background:var(--surface-2); border:1px solid var(--line-1); display:block; }
+.tl { display:flex; align-items:center; gap:10px; margin-top:var(--space-3); }
+.tl input[type=range] { flex:1; accent-color:var(--accent); height:22px; cursor:pointer; }
+.tl .pos { font-size:.78rem; color:var(--text-3); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.anim-label { min-height:38px; margin-top:var(--space-2); font-size:.88rem; }
+.legend { display:flex; gap:var(--space-3); flex-wrap:wrap; margin-top:var(--space-2); font-size:.74rem; color:var(--text-3); }
+.legend .li { display:inline-flex; align-items:center; gap:5px; }
+.legend .sw { width:10px; height:10px; border-radius:3px; }
+.kbd-hint { color:var(--text-3); font-size:.74rem; margin-top:6px; }
+kbd { background:var(--surface-2); border:1px solid var(--line-2); border-bottom-width:2px; border-radius:4px; padding:0 5px; font-size:.7rem; font-family:inherit; }
+.anim-placeholder { text-align:center; color:var(--text-3); font-size:.85rem; padding:var(--space-5) 0; }
+.anim-placeholder svg { width:34px; height:34px; display:block; margin:0 auto var(--space-2); opacity:.5; }
+
+/* modal */
+.modal-back { display:none; position:fixed; inset:0; background:rgba(5,7,10,.7); backdrop-filter:blur(3px); z-index:50; padding:var(--space-4); overflow-y:auto; }
+.modal-back.show { display:grid; place-items:center; }
+.modal { background:var(--surface-1); border:1px solid var(--line-2); border-radius:var(--radius-3); max-width:480px; width:100%; padding:var(--space-5); box-shadow:var(--shadow-2); }
+.modal h3 { margin:0 0 var(--space-4); font-size:1.05rem; }
+.recap { background:var(--surface-2); border:1px solid var(--line-1); border-radius:var(--radius-2); padding:var(--space-4); font-size:.87rem; }
+.recap .row-l { display:flex; justify-content:space-between; gap:var(--space-3); padding:3px 0; }
+.recap .row-l .k { color:var(--text-3); }
+.recap .row-l .v { font-weight:600; text-align:right; }
+.recap hr { border:0; border-top:1px solid var(--line-1); margin:var(--space-2) 0; }
+.modal .actions { display:flex; gap:var(--space-2); margin-top:var(--space-5); }
+.modal .actions .btn { margin-top:0; }
+
+/* footer */
+footer.foot { color:var(--text-3); font-size:.78rem; text-align:center; padding:var(--space-6) 0 var(--space-4); }
+footer.foot code { background:var(--surface-1); border:1px solid var(--line-1); border-radius:4px; padding:1px 5px; font-size:.72rem; }
+
+/* skeleton */
+.skel { background:linear-gradient(90deg,var(--surface-2) 25%,#12151c 50%,var(--surface-2) 75%); background-size:200% 100%; animation:sk 1.2s infinite; border-radius:6px; height:14px; }
+@keyframes sk { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+@media (max-width:920px) { .wrap { padding:var(--space-3); } }
+@media (prefers-reduced-motion:reduce) {
+  * { transition:none !important; animation:none !important; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="logo" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#04310f" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 6H8a5 5 0 0 0-5 5v1"/>
+        <path d="M17 2l4 4-4 4"/>
+        <path d="M3 18h13a5 5 0 0 0 5-5v-1"/>
+        <path d="M7 22l-4-4 4-4"/>
+        <path d="M8.5 12h7"/>
+        <path d="M10 14.5h4"/>
+      </svg>
+    </div>
+    <div>
+      <h1>bambu<b>-sequencer</b></h1>
+      <div class="tagline">Repeat prints automatically: print → cool → push off → next</div>
+    </div>
+  </header>
+
+  <nav class="tabs" aria-label="Pages">
+    <button class="tab is-active" id="tabSequence" onclick="showPage('sequence')">Sequence creation</button>
+    <button class="tab" id="tabPrinters" onclick="showPage('printers')">Printers</button>
+  </nav>
+
+  <!-- ============ PAGE: sequence creation ============ -->
+  <div id="pageSequence">
+  <div class="grid">
+    <main>
+      <!-- upload -->
+      <section class="card">
+        <h2>Upload</h2>
+        <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose a sliced .gcode.3mf file">
+          <div class="placeholder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 9 5-5 5 5"/><path d="M12 4v12"/></svg>
+            <div class="dt"><b>Drop your .gcode.3mf here</b> or click to browse</div>
+            <div class="hint">Slice once in Bambu Studio / OrcaSlicer, export "Plate as .gcode.3mf"</div>
+          </div>
+          <div class="fileinfo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#00c853" stroke-width="2" style="width:30px;height:30px" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>
+            <div class="fname" id="fname">—</div>
+            <div class="fmeta" id="fmeta">—</div>
+            <div class="hint">Click to replace</div>
+          </div>
+        </div>
+        <input type="file" id="file" accept=".3mf" hidden>
+        <div id="uploadAlert"></div>
+        <div id="warningsBox"></div>
+      </section>
+
+      <!-- plate: one block per plate (preview, objects, plate totals, prints) -->
+      <section class="card" id="plateCard" style="display:none">
+        <h2>Plate contents</h2>
+        <div id="platesWrap"></div>
+      </section>
+
+      <!-- configure -->
+      <section class="card" id="configCard" style="display:none">
+        <h2>Configure the sequence</h2>
+        <p class="hint" style="margin:-8px 0 4px">Set the number of prints per plate above, under "Plate contents".</p>
+
+        <fieldset class="group">
+          <legend>Ejection mechanics</legend>
+          <div class="two">
+            <div class="field">
+              <label for="pushz" title="Z height of the toolhead edge above the plate during the push">Push height (mm)</label>
+              <input type="number" id="pushz" value="0.4" min="0.1" max="2" step="0.05" autocomplete="off">
+              <small class="hint-inline">Toolhead edge height above the plate</small>
+            </div>
+            <div class="field">
+              <label for="tlift" title="Extra Z gap above the tallest object on the plate">Lift height (mm)</label>
+              <input type="number" id="tlift" value="5" min="1" max="50" step="0.5" autocomplete="off">
+              <small class="hint-inline">Toolhead gap above the tallest object</small>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="group">
+          <legend>Safety</legend>
+          <div class="two">
+            <div class="field">
+              <label for="cooltemp" title="The part is pushed once the plate has cooled to this temperature">Ejection bed temp (°C)</label>
+              <input type="number" id="cooltemp" value="45" min="20" max="100" autocomplete="off">
+              <small class="hint-inline">Plate temperature when the part is ejected</small>
+            </div>
+            <div class="field">
+              <label for="safetywait" title="Extra dwell after the bed reached the cooldown temperature, before the push">Safety wait (s)</label>
+              <input type="number" id="safetywait" value="60" min="0" max="600" autocomplete="off">
+              <small class="hint-inline">Dwell before every push</small>
+            </div>
+          </div>
+          <div class="field">
+            <label for="minheight" title="Parts below this height risk jamming the toolhead; 0 = no check">Min height check (mm)</label>
+            <input type="number" id="minheight" value="7" min="0" max="100" step="0.5" autocomplete="off">
+            <small class="hint-inline">Minimum part height to be pushed off cleanly</small>
+          </div>
+        </fieldset>
+
+        <div class="total-card" id="totalCard" style="display:none">
+          <div class="tt">Sequence totals</div>
+          <div class="total-grid" id="totalGrid"></div>
+          <div class="total-check" id="totalCheck"></div>
+        </div>
+
+        <div class="progress" id="progress"><div class="bar" id="progBar"></div></div>
+        <div class="progress-label" id="progLabel"></div>
+
+        <button class="btn" id="go" onclick="openConfirm()">Build sequence file</button>
+        <div id="result" aria-live="polite"></div>
+        <div class="stale-note" id="staleNote">⚠ Settings changed since the last build — the file below may be outdated. <button class="btn btn-sm" onclick="openConfirm()">Rebuild</button></div>
+      </section>
+    </main>
+
+    <!-- right: sticky preview -->
+    <aside class="side">
+      <section class="card" id="animCard" style="display:none">
+        <div class="anim-head">
+          <h2 style="margin:0">Ejection preview</h2>
+          <div id="animPlateTabs" class="plate-tabs"></div>
+        </div>
+        <div id="animEmpty" class="anim-placeholder">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+          <span id="animEmptyText">Build the sequence to preview the ejection</span>
+        </div>
+        <div id="animWrap" style="display:none">
+          <canvas id="animCanvas" role="img" aria-label="Ejection animation: toolhead pushes the object off the plate"></canvas>
+          <div class="tl">
+            <input type="range" id="scrub" min="0" max="0" value="0" aria-label="Animation step">
+            <span class="pos" id="animPos">Step 1/1</span>
+          </div>
+          <div class="anim-label" id="animLabel" aria-live="polite">—</div>
+          <div class="legend">
+            <span class="li"><span class="sw" style="background:rgba(0,200,83,.4);border:1px solid #00c853"></span> Object</span>
+            <span class="li"><span class="sw" style="background:rgba(255,159,67,.5);border:1px solid #ff9f43"></span> Toolhead</span>
+            <span class="li"><span class="sw" style="background:#1a1e27;border:1px solid #39404f"></span> Build plate</span>
+            <span class="li"><span class="sw" style="border:1px dashed #00c853;background:transparent"></span> Drop zone</span>
+          </div>
+          <div class="kbd-hint"><kbd>←</kbd> <kbd>→</kbd> step · <kbd>Space</kbd> play/pause</div>
+        </div>
+      </section>
+    </aside>
+  </div>
+  </div><!-- /pageSequence -->
+
+  <!-- ============ PAGE: printers ============ -->
+  <div id="pagePrinters" style="display:none">
+    <section class="card">
+      <h2>Printer compatibility</h2>
+      <div id="printersTableWrap"></div>
+    </section>
+  </div><!-- /pagePrinters -->
+
+  <footer class="foot">
+    Always watch the first cycle before going unattended
+  </footer>
+</div>
+
+<!-- confirm modal -->
+<div class="modal-back" id="modalBack">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+    <h3 id="mTitle">Build this sequence?</h3>
+    <div class="recap" id="recap"></div>
+    <div id="modalAlerts"></div>
+    <div class="actions">
+      <button class="btn btn-ghost btn-sm" onclick="closeConfirm()">Cancel</button>
+      <button class="btn btn-sm" id="buildBtn" onclick="buildSequence()" style="width:auto; margin-top:0">Build</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const esc = s => { const d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; };
+const MAX_UPLOAD_MB = window.APP_MAX_UPLOAD_MB || 300;
+
+// ===== state =====
+let currentFile = null, stats = null, lastBuildName = null;
+let anim = { data: null, idx: 0, timer: null, speed: 900, plate: 1 };
+
+// ===== helpers =====
+function fmtTime(sec) {
+  if (!sec || sec <= 0) return '—';
+  sec = Math.round(sec);
+  const d = Math.floor(sec / 86400), h = Math.floor((sec % 86400) / 3600), m = Math.round((sec % 3600) / 60), s = sec % 60;
+  const parts = [];
+  if (d) parts.push(d + 'd');
+  if (h) parts.push(h + 'h');
+  if (m && !d) parts.push(m + 'm');
+  if (!parts.length && s) parts.push(s + 's');
+  return parts.join(' ') || (m + 'm');
+}
+function badge(cls, text) { return '<span class="badge ' + cls + '">' + text + '</span>'; }
+function alertBox(kind, html) { return '<div class="alert ' + kind + '" role="alert">' + html + '</div>'; }
+
+// ===== dropzone =====
+const drop = $('drop'), fileInput = $('file');
+drop.addEventListener('click', () => fileInput.click());
+drop.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); } });
+['dragenter','dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('is-over'); }));
+['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('is-over'); }));
+drop.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f) handleFile(f); });
+fileInput.addEventListener('change', () => { if (fileInput.files[0]) handleFile(fileInput.files[0]); });
+
+function handleFile(f) {
+  $('uploadAlert').innerHTML = '';
+  if (!f.name.toLowerCase().endsWith('.3mf')) {
+    $('uploadAlert').innerHTML = alertBox('err', '<b>Not a .3mf file.</b> Export from Bambu Studio: File → Export → Plate as .gcode.3mf');
+    drop.classList.add('is-invalid'); setTimeout(() => drop.classList.remove('is-invalid'), 1600);
+    return;
+  }
+  if (f.size > MAX_UPLOAD_MB * 1024 * 1024) {
+    $('uploadAlert').innerHTML = alertBox('err', '<b>File larger than ' + MAX_UPLOAD_MB + ' MB.</b>');
+    return;
+  }
+  currentFile = f; stats = null; lastBuildName = null;
+  drop.classList.add('has-file');
+  $('fname').textContent = f.name;
+  $('fmeta').textContent = (f.size / 1024 / 1024).toFixed(1) + ' MB';
+  $('result').innerHTML = ''; $('staleNote').classList.remove('show');
+  // hide everything that belonged to the previous file until stats arrive
+  $('plateCard').style.display = 'none';
+  $('configCard').style.display = 'none';
+  $('animCard').style.display = 'none';
+  $('totalCard').style.display = 'none';
+  $('platesWrap').innerHTML = '';
+  $('warningsBox').innerHTML = '';
+  document.body.classList.add('has-file');
+  fileInput.value = '';
+  // reset animation until next build
+  anim.data = null; anim.plate = 1; stopPlay();
+  $('animPlateTabs').innerHTML = '';
+  $('animWrap').style.display = 'none';
+  $('animEmpty').style.display = 'block';
+  $('animEmptyText').textContent = 'Build the sequence to preview the ejection';
+  loadStats();
+}
+
+// ===== stats =====
+async function loadStats() {
+  if (!currentFile) return;
+  $('uploadAlert').innerHTML = alertBox('info', 'Reading file…');
+  const fd = new FormData(); fd.append('file', currentFile);
+  let resp;
+  try { resp = await fetch('/api/stats', { method: 'POST', body: fd }); }
+  catch (e) { $('uploadAlert').innerHTML = alertBox('err', '<b>Connection failed.</b> Is the app running?'); return; }
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({ detail: 'Unknown error' }));
+    $('uploadAlert').innerHTML = alertBox('err', '<b>Could not parse this file.</b> ' + esc(err.detail || '') + (resp.status === 400 && /slice/i.test(err.detail || '') ? '<br><span class="hint">Slice it in Bambu Studio first, then export "Plate as .gcode.3mf".</span>' : ''));
+    return;
+  }
+  stats = await resp.json();
+  $('uploadAlert').innerHTML = '';
+  renderStats();
+}
+
+function _filChips(filaments) {
+  return (filaments || []).map(f => {
+    const col = f.color && /^#[0-9a-fA-F]{6,8}$/.test(f.color) ? f.color : null;
+    const g = Math.round((f.weight_g || 0) * 10) / 10;
+    return '<span class="fil-chip">' + (col ? '<span class="dot" style="background:' + col + '"></span>' : '') + esc(f.type) + ' ' + g.toLocaleString('en-US') + ' g</span>';
+  }).join('');
+}
+
+// sequence-wide filament consumption: per color/type summed over all
+// active plates times their configured prints
+function _sequenceFilaments(plates, prints) {
+  const agg = {};
+  (plates || []).forEach(function (p) {
+    const n = prints[p.index] || 0;
+    (p.filaments || []).forEach(function (f) {
+      const key = (f.type || '') + '|' + (f.color || '');
+      const e = agg[key] || (agg[key] = { type: f.type, color: f.color, weight_g: 0 });
+      e.weight_g += (f.weight_g || 0) * n;
+    });
+  });
+  return Object.keys(agg).map(k => agg[k]).filter(f => f.weight_g > 0)
+    .sort((a, b) => b.weight_g - a.weight_g);
+}
+
+function _objTable(plate) {
+  if (!plate.objects || !plate.objects.length) return '<div class="hint">No objects found on this plate.</div>';
+  return '<div class="table-scroll" style="margin-top:var(--space-4)"><table class="objtable"><thead><tr>' +
+    '<th>Object</th><th>W × D × H (mm)</th><th>Filament (est.)</th>' +
+    '</tr></thead><tbody>' +
+    plate.objects.map(function (o) {
+      const fil = o.multi ? (o.filament_g_est + ' g <span class="hint">(' + o.share_pct + '%)</span>') : ((plate.filament_weight_g || 0) + ' g');
+      return '<tr>' +
+        '<td class="objname">' + esc(o.name) + '</td>' +
+        '<td class="mono">' + o.width_mm + ' × ' + o.depth_mm + ' × ' + o.height_mm + '</td>' +
+        '<td class="mono">' + fil + '</td>' +
+        '</tr>';
+    }).join('') + '</tbody></table></div>';
+}
+
+function renderStats() {
+  const s = stats;
+  const plates = (s.plates && s.plates.length) ? s.plates : [{
+    index: 1, print_time_human: s.print_time_human, print_time_sec: s.print_time_sec,
+    filament_weight_g: s.filament_weight_g, layer_count: s.layer_count,
+    max_z_height: s.max_z_height, filaments: s.filaments, thumbnail: s.thumbnail,
+    objects: s.objects,
+  }];
+  $('plateCard').style.display = 'block';
+  $('configCard').style.display = 'block';
+  $('animCard').style.display = 'block';
+  $('totalCard').style.display = 'block';
+
+  $('platesWrap').innerHTML = plates.map(function (p) {
+    const thumb = p.thumbnail
+      ? '<img class="stats-thumb" src="' + p.thumbnail + '" alt="Plate ' + p.index + ' render preview">'
+      : '<div class="hint">No plate preview</div>';
+    const meta =
+      (s.printer_model ? '<b>Printer:</b> ' + esc(s.printer_model) + ' · ' : '') +
+      (p.max_z_height ? '<b>Tallest object:</b> ' + p.max_z_height + ' mm · ' : '') +
+      (s.slicer_version ? '<b>Slicer:</b> Bambu Studio ' + esc(s.slicer_version) : '');
+    return '<div class="plate-block">' +
+      '<div class="plate-flex">' +
+        '<div class="plate-visual">' + thumb + '</div>' +
+        '<div class="plate-data">' +
+          '<div class="plate-totals">' +
+            '<span class="pt-item"><b>Plate ' + p.index + '</b></span>' +
+            '<span class="pt-item"><b>Print time:</b> ' + esc(p.print_time_human || '—') + '</span>' +
+            '<span class="pt-item"><b>Filament:</b> ' + (p.filament_weight_g || 0) + ' g</span>' +
+            '<span class="pt-item"><b>Layers:</b> ' + (p.layer_count || '—') + '</span>' +
+          '</div>' +
+          '<div class="plate-fil-colors">' + _filChips(p.filaments) + '</div>' +
+          '<div class="hint" style="margin-top:6px">' + meta + '</div>' +
+        '</div>' +
+      '</div>' +
+      _objTable(p) +
+      '<div class="plate-prints">' +
+        '<div class="field">' +
+          '<label for="plateprints-' + p.index + '">Prints of plate ' + p.index + '</label>' +
+          '<input type="number" id="plateprints-' + p.index + '" value="1" min="0" max="99" autocomplete="off">' +
+          '<small class="hint-inline">1–99 · 0 = skip this plate</small>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  // consolidated height check + sequence totals
+  renderTotals();
+  renderWarnings(s.warnings);
+}
+
+function refreshHeightBadgeInternal() {
+  // height check shown once in the Sequence totals card (consolidated);
+  // filament totals live in the totals grid ("filament total per color")
+  const s = stats;
+  if (!s || !s.objects.length) return;
+  const mh = parseFloat($('minheight').value);
+  const hcheckActive = parseInt($('minheight').value, 10) > 0;
+  const multiPlate = !!(s.plates && s.plates.length > 1);
+  const label = o => esc(o.name) + (multiPlate ? ' (plate ' + o.plate + ')' : '');
+  let box = '';
+  if (!hcheckActive) {
+    box = badge('info', 'Height check off');
+  } else {
+    const worst = Math.min.apply(null, s.objects.map(o => o.height_mm));
+    const flat = s.objects.filter(o => o.height_mm < mh);
+    box = flat.length === 0
+      ? badge('ok', 'All ' + s.objects.length + ' object' + (s.objects.length > 1 ? 's' : '') + ' ≥ ' + mh + ' mm ✓')
+      : badge('err', flat.length + ' object' + (flat.length > 1 ? 's' : '') + ' too flat: ' + flat.map(label).join(', ') + ' (' + worst + ' mm)');
+  }
+  $('totalCheck').innerHTML = box;
+}
+
+// ===== per-plate prints =====
+function readPlatePrints() {
+  const out = {};
+  document.querySelectorAll('[id^="plateprints-"]').forEach(function (inp) {
+    const idx = parseInt(inp.id.replace('plateprints-', ''), 10);
+    out[idx] = Math.max(0, Math.min(99, parseInt(inp.value, 10) || 0));
+  });
+  return out;
+}
+
+function renderTotals() {
+  const s = stats;
+  if (!s) return;
+  const prints = readPlatePrints();
+  const plates = (s.plates && s.plates.length) ? s.plates : [{ index: 1, print_time_sec: s.print_time_sec, filament_weight_g: s.filament_weight_g, filaments: s.filaments }];
+  let totalPrints = 0, totalFil = 0, totalSec = 0;
+  const breakdown = [];
+  plates.forEach(function (p) {
+    const n = prints[p.index] || 0;
+    totalPrints += n;
+    totalFil += (p.filament_weight_g || 0) * n;
+    totalSec += (p.print_time_sec || 0) * n;
+    breakdown.push('Plate ' + p.index + ': ' + n + (n === 0 ? ' (skipped)' : ''));
+  });
+  const seqFil = _sequenceFilaments(plates, prints);
+  $('totalGrid').innerHTML =
+    '<div class="cell"><div class="v">' + totalPrints + '</div><div class="k">prints total</div></div>' +
+    '<div class="cell"><div class="v">' + (Math.round(totalFil * 10) / 10).toLocaleString('en-US') + ' g</div><div class="k">filament total</div></div>' +
+    '<div class="cell"><div class="v">' + fmtTime(totalSec) + '</div><div class="k">print time total</div></div>' +
+    '<div class="cell wide"><div class="v" style="font-size:.95rem">' + breakdown.join(' · ') + '</div><div class="k">prints per plate</div></div>' +
+    (seqFil.length ? '<div class="cell wide"><div class="v" style="display:inline-flex;gap:6px;flex-wrap:wrap">' + _filChips(seqFil) + '</div><div class="k">filament total per color</div></div>' : '');
+  refreshHeightBadgeInternal();
+}
+
+function renderWarnings(warnings) {
+  $('warningsBox').innerHTML = (warnings || []).map(w => alertBox('warn', esc(w))).join('');
+}
+
+// ===== confirm modal =====
+function openConfirm() {
+  if (!currentFile) { $('uploadAlert').innerHTML = alertBox('err', '<b>Choose a file first.</b>'); return; }
+  if (!stats) { loadStats(); return; }
+  const s = stats;
+  const plates = (s.plates && s.plates.length) ? s.plates : [{ index: 1, filament_weight_g: s.filament_weight_g, print_time_sec: s.print_time_sec, first_layer_bed_temp: s.first_layer_bed_temp }];
+  const prints = readPlatePrints();
+  const activePlates = plates.filter(p => (prints[p.index] || 0) > 0);
+  const totalPrints = activePlates.reduce((a, p) => a + (prints[p.index] || 0), 0);
+  const totalFil = activePlates.reduce((a, p) => a + (p.filament_weight_g || 0) * (prints[p.index] || 0), 0);
+  const totalSec = activePlates.reduce((a, p) => a + (p.print_time_sec || 0) * (prints[p.index] || 0), 0);
+  const plateList = activePlates.map(p => 'Plate ' + p.index + ': ' + prints[p.index]).join(' · ') || 'none';
+  const minH = parseFloat($('minheight').value);
+  let alerts = '';
+  if (!activePlates.length) {
+    alerts += alertBox('err', '<b>No plates selected.</b> Set at least one plate to 1 or more prints.');
+    $('buildBtn').disabled = true;
+  }
+  // worst (shortest) object across all plates decides the jam guard
+  const worstH = s.objects.length ? Math.min.apply(null, s.objects.map(o => o.height_mm)) : 0;
+  if (!alerts && minH > 0 && s.objects.length && worstH < minH) {
+    const nFlat = s.objects.filter(o => o.height_mm < minH).length;
+    alerts += alertBox('err', '<b>Object' + (nFlat > 1 ? 's are' : ' is') + ' too flat for the toolhead (' + s.objects.filter(o => o.height_mm < minH).map(o => esc(o.name) + (plates.length > 1 ? ' (plate ' + o.plate + ')' : '') + ' ' + o.height_mm + ' mm').join(', ') + ' &lt; ' + minH + ' mm).</b> Slice taller objects or set the check to 0.');
+    $('buildBtn').disabled = true;
+  } else if (!alerts && s.objects.length && Math.min.apply(null, s.objects.map(o => o.depth_mm)) < 12) {
+    alerts += alertBox('warn', '<b>Shallow object (' + Math.min.apply(null, s.objects.map(o => o.depth_mm)) + ' mm deep).</b> It may not fully clear the plate edge — check container placement and watch the first cycle.');
+    $('buildBtn').disabled = false;
+  } else if (!alerts) {
+    $('buildBtn').disabled = false;
+  }
+  // cooling guard per active plate (different plates may use different temps)
+  const coolV = parseInt($('cooltemp').value, 10);
+  const hotPlates = activePlates.filter(p => p.first_layer_bed_temp && coolV >= p.first_layer_bed_temp).map(p => p.index);
+  if (hotPlates.length) {
+    alerts += alertBox('warn', '<b>Ejection temp ≥ first-layer bed temp on plate ' + hotPlates.join(', ') + '.</b> That heats instead of cooling — lower it for a proper release.');
+  }
+  $('modalAlerts').innerHTML = alerts;
+  $('recap').innerHTML =
+    '<div class="row-l"><span class="k">File</span><span class="v">' + esc(currentFile.name) + '</span></div>' +
+    '<div class="row-l"><span class="k">Plates</span><span class="v">' + plateList + '</span></div>' +
+    '<div class="row-l"><span class="k">Prints</span><span class="v">' + totalPrints + ' total</span></div>' +
+    '<div class="row-l"><span class="k">Filament</span><span class="v">~' + (Math.round(totalFil * 10) / 10).toLocaleString('en-US') + ' g' + (s.filaments.length ? ' ' + esc(s.filaments[0].type) : '') + '</span></div>' +
+    '<div class="row-l"><span class="k">Print time</span><span class="v">~' + fmtTime(totalSec) + '</span></div>' +
+    '<hr>' +
+    '<div class="row-l"><span class="k">Ejection</span><span class="v">ON · cool to ' + esc($('cooltemp').value) + ' °C</span></div>' +
+    '<div class="row-l"><span class="k">Push height / lift height</span><span class="v">' + esc($('pushz').value) + ' / ' + esc($('tlift').value) + ' mm</span></div>' +
+    '<div class="row-l"><span class="k">Safety wait</span><span class="v">' + esc($('safetywait').value) + ' s</span></div>' +
+    '<hr>' +
+    '<div class="row-l"><span class="k">Printer</span><span class="v">' + esc(s.printer_model || 'unknown') + '</span></div>';
+  $('modalBack').classList.add('show');
+  $('buildBtn').focus();
+}
+function closeConfirm() { $('modalBack').classList.remove('show'); $('go').focus(); }
+$('modalBack').addEventListener('click', e => { if (e.target === $('modalBack')) closeConfirm(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeConfirm(); });
+// focus trap: keep Tab inside the open modal
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Tab' || !$('modalBack').classList.contains('show')) return;
+  const focusables = $('modalBack').querySelectorAll('button, input, [tabindex]:not([tabindex="-1"])');
+  if (!focusables.length) return;
+  const first = focusables[0], last = focusables[focusables.length - 1];
+  if (e.shiftKey && document.activeElement === first) { last.focus(); e.preventDefault(); }
+  else if (!e.shiftKey && document.activeElement === last) { first.focus(); e.preventDefault(); }
+});
+
+// ===== build (XHR for progress) =====
+function buildSequence() {
+  closeConfirm();
+  if (!currentFile) return;
+  const btn = $('go'); btn.disabled = true;
+  $('progress').classList.add('show'); $('progLabel').classList.add('show');
+  $('progBar').style.width = '0%';
+  $('progLabel').textContent = 'Uploading & building sequence…';
+  $('staleNote').classList.remove('show');
+
+  const fd = new FormData();
+  const num = (el, def) => (String(el.value || '').trim().replace(',', '.') || def);
+  fd.append('file', currentFile);
+  fd.append('plate_prints', JSON.stringify(readPlatePrints()));
+  fd.append('t_lift', num($('tlift'), '5'));
+  fd.append('push_z', num($('pushz'), '0.4'));
+  fd.append('cool_temp_bed', num($('cooltemp'), '45'));
+  fd.append('safety_wait_s', num($('safetywait'), '60'));
+  fd.append('min_height_mm', num($('minheight'), '7'));
+
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', '/api/sequence');
+  xhr.responseType = 'blob';
+  xhr.upload.onprogress = e => {
+    if (e.lengthComputable) {
+      if (e.loaded < e.total) {
+        const p = Math.round(e.loaded / e.total * 70);
+        $('progBar').style.width = p + '%';
+        $('progLabel').textContent = 'Uploading… ' + p + '%';
+      } else {
+        $('progBar').style.width = '90%';
+        $('progLabel').textContent = 'Building sequence on server…';
+      }
+    }
+  };
+  xhr.onload = async () => {
+    $('progBar').style.width = '100%';
+    if (xhr.status !== 200) {
+      let detail = 'Unknown error (' + xhr.status + ')';
+      try {
+        const j = JSON.parse(await xhr.response.text());
+        if (typeof j.detail === 'string') detail = j.detail;
+        else if (Array.isArray(j.detail)) {
+          detail = j.detail.map(e => {
+            const field = (e.loc || []).slice(1).join('.') || '';
+            return (field ? field + ': ' : '') + (e.msg || '');
+          }).join(' · ');
+        }
+      } catch (_) {}
+      $('result').innerHTML = alertBox('err', '<b>Build failed.</b> ' + esc(detail));
+      $('progLabel').textContent = 'Failed';
+      btn.disabled = false;
+      setTimeout(() => $('progress').classList.remove('show'), 800);
+      return;
+    }
+    const dispo = xhr.getResponseHeader('content-disposition') || '';
+    let fname = 'sequence.3mf';
+    try { fname = decodeURIComponent(dispo.split("filename*=UTF-8''")[1] || fname); } catch (_) {}
+    const url = URL.createObjectURL(xhr.response);
+    lastBuildName = fname;
+    $('progLabel').textContent = 'Done — ' + (xhr.response.size / 1024 / 1024).toFixed(1) + ' MB';
+    setTimeout(() => $('progress').classList.remove('show'), 1200);
+    $('result').innerHTML =
+      '<div class="result-ok"><div class="dl">' +
+      '<svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>' +
+      '<div><b style="font-size:.95rem">' + esc(fname) + '</b><br><span class="hint">' + (xhr.response.size / 1024 / 1024).toFixed(1) + ' MB · send this file to your printer like any other print</span></div></div>' +
+      '<a class="btn btn-sm" style="width:auto" href="' + url + '" download="' + esc(fname) + '">Download</a></div>';
+    $('animEmptyText').textContent = 'Loading ejection preview…';
+    btn.disabled = false;
+    markStaleWatch();
+    // NOW load the animation (post-build, with the built settings)
+    loadAnimation();
+  };
+  xhr.onerror = () => {
+    $('result').innerHTML = alertBox('err', '<b>Connection failed.</b>');
+    $('progLabel').textContent = 'Failed';
+    btn.disabled = false; $('progress').classList.remove('show');
+  };
+  xhr.send(fd);
+}
+
+// stale invalidation: any param change after a successful build
+let staleWatchBound = false;
+function markStaleWatch() {
+  if (staleWatchBound) return;
+  staleWatchBound = true;
+  ['cooltemp','pushz','tlift','safetywait','minheight'].forEach(id => {
+    $(id).addEventListener('change', () => {
+      if (lastBuildName) $('staleNote').classList.add('show');
+      renderTotals();
+    });
+  });
+  // per-plate prints inputs are rendered dynamically -> event delegation
+  const onPlateInput = e => {
+    if (!e.target || String(e.target.id || '').indexOf('plateprints-') !== 0) return;
+    if (lastBuildName) $('staleNote').classList.add('show');
+    renderTotals();
+  };
+  $('platesWrap').addEventListener('change', onPlateInput);
+  $('platesWrap').addEventListener('input', onPlateInput);
+}
+markStaleWatch();
+
+function refreshHeightBadge() {
+  if (stats) { renderTotals(); }
+}
+
+// ===== page switching =====
+function showPage(page) {
+  $('pageSequence').style.display = page === 'sequence' ? '' : 'none';
+  $('pagePrinters').style.display = page === 'printers' ? '' : 'none';
+  $('tabSequence').classList.toggle('is-active', page === 'sequence');
+  $('tabPrinters').classList.toggle('is-active', page === 'printers');
+  if (page === 'printers') { window.scrollTo(0, 0); loadPrinters(); }
+}
+function retryPrinters() { printersLoaded = false; loadPrinters(); }
+let printersLoaded = false;
+async function loadPrinters() {
+  if (printersLoaded) return;
+  if (!$('printersTableWrap').dataset.loading) {
+    $('printersTableWrap').innerHTML = '<div class="skel" style="width:60%"></div><div class="skel" style="width:85%"></div><div class="skel" style="width:70%"></div>';
+    $('printersTableWrap').dataset.loading = '1';
+  }
+  let resp;
+  try { resp = await fetch('/api/printers'); }
+  catch (e) {
+    $('printersTableWrap').innerHTML = alertBox('err', '<b>Could not load printers.</b> <button class="btn btn-sm" onclick="retryPrinters()">Retry</button>');
+    delete $('printersTableWrap').dataset.loading;
+    return;
+  }
+  if (!resp.ok) {
+    $('printersTableWrap').innerHTML = alertBox('err', '<b>Could not load printers.</b> <button class="btn btn-sm" onclick="retryPrinters()">Retry</button>');
+    delete $('printersTableWrap').dataset.loading;
+    return;
+  }
+  const data = await resp.json();
+  printersLoaded = true;
+  delete $('printersTableWrap').dataset.loading;
+  const badgeCls = { verified: 'badge ok', expected: 'badge ok', 'needs-test': 'badge info' };
+  $('printersTableWrap').innerHTML =
+      '<div style="overflow-x:auto">' +
+      '<table class="printers"><thead><tr>' +
+      '<th>Model</th><th>Print area (mm)</th><th>Rear Y limit (mm)</th><th>Kinematics</th><th>Status</th>' +
+      '</tr></thead><tbody>' +
+    data.printers.map(function (p) {
+      return '<tr>' +
+        '<td class="pname">' + esc(p.name) + '</td>' +
+        '<td class="mono">' + p.printable_x + ' × ' + p.printable_y + (p.printable_z ? ' × ' + p.printable_z : '') + '</td>' +
+        '<td class="mono">' + p.rear_command_limit + '<span class="sub">' + esc(p.rear_command_limit_label || '') + '</span></td>' +
+        '<td>' + esc(p.structure_label || p.structure) + '<span class="sub">' + esc(p.mechanism_short) + '</span></td>' +
+        '<td title="' + esc(p.note) + '"><span class="' + badgeCls[p.suitability] + '">' + esc(p.suitability_label || p.suitability) + '</span></td>' +
+        '</tr>';
+    }).join('') + '</tbody></table></div>';
+}
+
+// ===== isometric ejection animation =====
+const COS30 = 0.8660254, SIN30 = 0.5, ZSCALE = 0.9;
+const DROP_DEPTH = 60;    // drop zone extends this far in front of the bed (mm)
+const HEAD_H = 14;        // toolhead box height above its push edge (mm)
+
+function renderAnimTabs(plates) {
+  const wrap = $('animPlateTabs');
+  if (plates.length < 2) { wrap.innerHTML = ''; return; }
+  wrap.innerHTML = plates.map(p =>
+    '<button type="button" class="' + (p === anim.plate ? 'is-active' : '') +
+    '" onclick="selectAnimPlate(' + p + ')">Plate ' + p + '</button>'
+  ).join('');
+}
+function selectAnimPlate(p) { anim.plate = p; loadAnimation(); }
+
+async function loadAnimation() {
+  if (!currentFile) return;
+  const s = stats;
+  const plateIds = (s && s.plates && s.plates.length) ? s.plates.map(p => p.index) : [1];
+  if (!anim.plate || plateIds.indexOf(anim.plate) === -1) anim.plate = plateIds[0];
+  renderAnimTabs(plateIds);
+  const num = (el, def) => (String(el.value || '').trim().replace(',', '.') || def);
+  const fd = new FormData();
+  fd.append('file', currentFile);
+  fd.append('plate', String(anim.plate));
+  fd.append('t_lift', num($('tlift'), '5'));
+  fd.append('push_z', num($('pushz'), '0.4'));
+  fd.append('cool_temp_bed', num($('cooltemp'), '45'));
+  fd.append('safety_wait_s', num($('safetywait'), '60'));
+  let resp;
+  try { resp = await fetch('/api/animation', { method: 'POST', body: fd }); }
+  catch (e) {
+    anim.data = null; stopPlay();
+    $('animWrap').style.display = 'none'; $('animEmpty').style.display = 'block';
+    $('animEmptyText').innerHTML = '<small>Preview unavailable (connection failed).</small>';
+    return;
+  }
+  if (!resp.ok) {
+    anim.data = null; stopPlay();
+    $('animWrap').style.display = 'none'; $('animEmpty').style.display = 'block';
+    $('animEmptyText').innerHTML = '<small>Preview unavailable for this plate.</small>';
+    return;
+  }
+  anim.data = await resp.json(); anim.idx = 0;
+  $('animEmpty').style.display = 'none'; $('animWrap').style.display = 'block';
+  const scrub = $('scrub');
+  scrub.max = anim.data.frames.length - 1; scrub.value = 0;
+  drawAnim();
+  const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!reduceMotion) animPlay(true); // autoplay once (skip if user prefers no motion)
+}
+
+function drawAnim() {
+  const c = $('animCanvas'), d = anim.data;
+  if (!d) return;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const cssW = c.clientWidth || 300, cssH = Math.round(cssW * 1.02);
+  if (c.width !== Math.round(cssW * dpr) || c.height !== Math.round(cssH * dpr)) {
+    c.width = Math.round(cssW * dpr); c.height = Math.round(cssH * dpr);
+    c.style.height = cssH + 'px';
+  }
+  const ctx = c.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const W = cssW, H = cssH;
+  const plateW = d.printable_area.width, plateD = d.printable_area.depth;
+
+  // vertical extent to fit: highest thing on screen
+  let zMaxFit = d.max_z_height || d.safe_z || 20;
+  for (const fr of d.frames) zMaxFit = Math.max(zMaxFit, (fr.toolhead.z || 0) + HEAD_H);
+
+  // spans at s = 1
+  const spanX = (plateW + plateD + DROP_DEPTH) * COS30;
+  const yLo = -DROP_DEPTH * SIN30 - zMaxFit * ZSCALE;                 // highest point (drop zone front, z max)
+  const yHi = (plateW + plateD) * SIN30 + 3 * ZSCALE + 14;                // lowest point (rear bed corner, slab + label gap)
+  const spanY = yHi - yLo;
+  const s = Math.min((W - 20) / spanX, (H - 20) / spanY);
+  const sxMin = -plateD * COS30, sxMax = (plateW + DROP_DEPTH) * COS30;
+  const px = (x, y, z) => (W - (sxMin + sxMax) * s) / 2 + (x - y) * COS30 * s;
+  const py = (x, y, z) => (H - spanY * s) / 2 - yLo * s + (x + y) * SIN30 * s - (z || 0) * ZSCALE * s;
+
+  ctx.clearRect(0, 0, W, H);
+  ctx.lineJoin = 'round';
+
+  const quad = (pts, fill, stroke, lw, dash) => {
+    ctx.beginPath();
+    pts.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]));
+    ctx.closePath();
+    if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+    if (stroke) {
+      ctx.strokeStyle = stroke; ctx.lineWidth = lw || 1;
+      ctx.setLineDash(dash || []); ctx.stroke(); ctx.setLineDash([]);
+    }
+  };
+
+  const f = d.frames[anim.idx];
+  // multi-object: bboxes come per-object (d.objects_bboxes), file-wide bbox as fallback
+  const objs = d.objects_bboxes && d.objects_bboxes.length ? d.objects_bboxes : (d.object_bbox ? [d.object_bbox] : []);
+  const objH = d.max_z_height || 20;
+  const activeIdx = (f.obj_index !== undefined && objs[f.obj_index]) ? f.obj_index : -1;
+  // per-frame state of EVERY object (positions move while pushed/cascade);
+  // fallback to the static bbox for payloads without it
+  const state = (f.objects && f.objects.length) ? f.objects
+    : objs.map((ob, i) => ({ index: i, y_front: ob.y_min, y_rear: ob.y_max, gone: false }));
+
+  // --- drop zone (farthest, drawn first): dashed parallelogram in front of the bed
+  quad([
+    [px(0, -DROP_DEPTH, 0), py(0, -DROP_DEPTH, 0)],
+    [px(plateW, -DROP_DEPTH, 0), py(plateW, -DROP_DEPTH, 0)],
+    [px(plateW, 0, 0), py(plateW, 0, 0)],
+    [px(0, 0, 0), py(0, 0, 0)],
+  ], 'rgba(0,200,83,.04)', 'rgba(0,200,83,.55)', 1.2, [5, 4]);
+  ctx.fillStyle = 'rgba(0,200,83,.75)'; ctx.font = '10px system-ui';
+  ctx.fillText('drop zone', px(plateW * 0.5, -DROP_DEPTH, 0) - 24, py(0, -DROP_DEPTH, 0) - 4);
+
+  // --- build plate slab (top face at z=0, 3 mm thick)
+  const bz0 = 0, bz1 = -3;
+  quad([ // rear-left side face (normal -x is hidden; draw +y and +x faces)
+    [px(0, plateD, bz0), py(0, plateD, bz0)], [px(plateW, plateD, bz0), py(plateW, plateD, bz0)],
+    [px(plateW, plateD, bz1), py(plateW, plateD, bz1)], [px(0, plateD, bz1), py(0, plateD, bz1)],
+  ], '#141821', '#39404f', 1.2);
+  quad([ // +x side face
+    [px(plateW, 0, bz0), py(plateW, 0, bz0)], [px(plateW, plateD, bz0), py(plateW, plateD, bz0)],
+    [px(plateW, plateD, bz1), py(plateW, plateD, bz1)], [px(plateW, 0, bz1), py(plateW, 0, bz1)],
+  ], '#0f1218', '#39404f', 1.2);
+  quad([ // top face
+    [px(0, 0, bz0), py(0, 0, bz0)], [px(plateW, 0, bz0), py(plateW, 0, bz0)],
+    [px(plateW, plateD, bz0), py(plateW, plateD, bz0)], [px(0, plateD, bz0), py(0, plateD, bz0)],
+  ], '#1a1e27', '#39404f', 1.4);
+  ctx.fillStyle = '#7d8595'; ctx.font = '10px system-ui';
+  const plateName = (d.printer && d.printer.model_name) ? d.printer.model_name + ' · ' : '';
+  ctx.fillText(plateName + 'build plate ' + plateW + '×' + plateD + ' mm', px(plateW, plateD, bz1) - 30, py(plateW, plateD, bz1) + 14);
+
+  // --- dashed toolhead trajectory (behind object + toolhead)
+  if (anim.idx > 0) {
+    ctx.strokeStyle = 'rgba(255,159,67,.35)'; ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    for (let i = 0; i <= anim.idx; i++) {
+      const b = d.frames[i].toolhead;
+      const X = px(b.x, b.y, b.z), Y = py(b.x, b.y, b.z);
+      i ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y);
+    }
+    ctx.stroke(); ctx.setLineDash([]);
+  }
+
+  // --- ALL objects as 3D boxes. The pushed object is highlighted; objects
+  // sharing its push lane move along (cascade). Rear-most drawn first so
+  // overlaps are correct, the active one last (on top).
+  const drawObject = (oi, active) => {
+    const ob = objs[oi];
+    const st = state.find(o => o.index === oi);
+    if (!ob || !st || st.gone || st.y_front === null || st.y_front === undefined) return;
+    const x0 = Math.min(ob.x_min, ob.x_max), x1 = Math.max(ob.x_min, ob.x_max);
+    const y0 = st.y_front, y1 = st.y_rear;
+    if (!(x1 > x0) || !(y1 > y0)) return;
+    const stroke = active ? '#00c853' : 'rgba(0,200,83,.55)';
+    // top face
+    quad([
+      [px(x0, y0, objH), py(x0, y0, objH)], [px(x1, y0, objH), py(x1, y0, objH)],
+      [px(x1, y1, objH), py(x1, y1, objH)], [px(x0, y1, objH), py(x0, y1, objH)],
+    ], active ? 'rgba(0,200,83,.35)' : 'rgba(0,200,83,.16)', stroke, active ? 1.4 : 1.0);
+    // +y side face (rear face, camera-facing)
+    quad([
+      [px(x0, y1, 0), py(x0, y1, 0)], [px(x1, y1, 0), py(x1, y1, 0)],
+      [px(x1, y1, objH), py(x1, y1, objH)], [px(x0, y1, objH), py(x0, y1, objH)],
+    ], active ? 'rgba(0,200,83,.22)' : 'rgba(0,200,83,.10)', stroke, active ? 1.2 : 0.9);
+    // +x side face (camera-facing)
+    quad([
+      [px(x1, y0, 0), py(x1, y0, 0)], [px(x1, y1, 0), py(x1, y1, 0)],
+      [px(x1, y1, objH), py(x1, y1, objH)], [px(x1, y0, objH), py(x1, y0, objH)],
+    ], active ? 'rgba(0,200,83,.28)' : 'rgba(0,200,83,.12)', stroke, active ? 1.2 : 0.9);
+    // front part overhanging the plate edge: dashed to show it is off the plate
+    if (y0 < 0) {
+      const clampedY0 = Math.min(y1, 0);
+      ctx.setLineDash([3, 3]);
+      quad([
+        [px(x0, y0, 0), py(x0, y0, 0)], [px(x1, y0, 0), py(x1, y0, 0)],
+        [px(x1, clampedY0, 0), py(x1, clampedY0, 0)], [px(x0, clampedY0, 0), py(x0, clampedY0, 0)],
+      ], null, 'rgba(0,200,83,.55)', 1, [3, 3]);
+      ctx.setLineDash([]);
+    }
+    ctx.fillStyle = active ? '#9fe8b8' : 'rgba(159,232,184,.6)';
+    ctx.font = '10px system-ui';
+    ctx.fillText('obj ' + (oi + 1) + (active ? ' · ' + objH + ' mm' : ''),
+                 px(x0, y1, objH) + 3, py(x0, y1, objH) - 3);
+  };
+  const visible = state.filter(o => !o.gone && o.y_rear !== null && objs[o.index]);
+  visible.sort((a, b) => (b.y_rear || 0) - (a.y_rear || 0));
+  visible.forEach(o => { if (o.index !== activeIdx) drawObject(o.index, false); });
+  if (activeIdx >= 0) drawObject(activeIdx, true);
+
+  // --- toolhead box (semi-transparent orange, floats above its push edge)
+  const b = f.toolhead, hw = d.toolhead_dims.width / 2, hd = d.toolhead_dims.depth / 2;
+  const hz0 = b.z, hz1 = b.z + HEAD_H;
+  const hx0 = b.x - hw, hx1 = b.x + hw, hy0 = b.y - hd, hy1 = b.y + hd;
+  // +y face
+  quad([
+    [px(hx0, hy1, hz0), py(hx0, hy1, hz0)], [px(hx1, hy1, hz0), py(hx1, hy1, hz0)],
+    [px(hx1, hy1, hz1), py(hx1, hy1, hz1)], [px(hx0, hy1, hz1), py(hx0, hy1, hz1)],
+  ], 'rgba(255,159,67,.18)', 'rgba(255,159,67,.7)', 1.1);
+  // +x face
+  quad([
+    [px(hx1, hy0, hz0), py(hx1, hy0, hz0)], [px(hx1, hy1, hz0), py(hx1, hy1, hz0)],
+    [px(hx1, hy1, hz1), py(hx1, hy1, hz1)], [px(hx1, hy0, hz1), py(hx1, hy0, hz1)],
+  ], 'rgba(255,159,67,.24)', 'rgba(255,159,67,.7)', 1.1);
+  // top face
+  quad([
+    [px(hx0, hy0, hz1), py(hx0, hy0, hz1)], [px(hx1, hy0, hz1), py(hx1, hy0, hz1)],
+    [px(hx1, hy1, hz1), py(hx1, hy1, hz1)], [px(hx0, hy1, hz1), py(hx0, hy1, hz1)],
+  ], 'rgba(255,159,67,.14)', 'rgba(255,159,67,.7)', 1.1);
+  // push-edge marker: short vertical line at the toolhead's push point
+  ctx.strokeStyle = '#ff9f43'; ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(px(b.x, b.y, b.z), py(b.x, b.y, b.z));
+  ctx.lineTo(px(b.x, b.y, b.z + 8), py(b.x, b.y, b.z + 8));
+  ctx.stroke();
+  ctx.fillStyle = '#ff9f43';
+  ctx.beginPath(); ctx.arc(px(b.x, b.y, b.z), py(b.x, b.y, b.z), 3.5, 0,Math.PI * 2); ctx.fill();
+
+  // --- labels
+  $('animPos').textContent = 'Step ' + (anim.idx + 1) + '/' + d.frames.length;
+  $('scrub').value = anim.idx;
+  $('animLabel').innerHTML = '<b>Step ' + (anim.idx + 1) + '/' + d.frames.length + ' — ' + esc(f.label) + '</b>';
+}
+
+function animStep(dir) {
+  if (!anim.data) return;
+  anim.idx = Math.max(0, Math.min(anim.data.frames.length - 1, anim.idx + dir));
+  stopPlay(); drawAnim();
+}
+function animPlay(silent) {
+  if (!anim.data) return;
+  if (anim.timer) { stopPlay(); return; }
+  if (anim.idx >= anim.data.frames.length - 1) anim.idx = 0;
+  anim.timer = setInterval(() => {
+    if (anim.idx >= anim.data.frames.length - 1) { stopPlay(); return; }
+    anim.idx++; drawAnim();
+  }, anim.speed);
+  if (!silent) { /* button state handled by stopPlay */ }
+}
+function stopPlay() { if (anim.timer) { clearInterval(anim.timer); anim.timer = null; } }
+
+$('scrub').addEventListener('input', e => { stopPlay(); anim.idx = parseInt(e.target.value, 10); drawAnim(); });
+document.addEventListener('keydown', e => {
+  if (e.target.matches('input,textarea') || e.target.tagName === 'BUTTON') return;
+  if (!anim.data) return;
+  if (e.key === 'ArrowLeft') { animStep(-1); e.preventDefault(); }
+  if (e.key === 'ArrowRight') { animStep(1); e.preventDefault(); }
+  if (e.key === ' ') { animPlay(); e.preventDefault(); }
+});
+window.addEventListener('resize', () => { if (anim.data) drawAnim(); });
+</script>
+</body>
+</html>
