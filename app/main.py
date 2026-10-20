@@ -34,8 +34,8 @@ from .threemf import (
     repack_single_plate_3mf,
 )
 
-app = FastAPI(title="bambu-sequencer", version="0.4.0")
-log = logging.getLogger("bambu-sequencer")
+app = FastAPI(title="PlateLoop", version="0.4.0")
+log = logging.getLogger("plate-loop")
 
 MAX_UPLOAD_MB = int(os.environ.get("MAX_UPLOAD_MB", "300"))
 MAX_UPLOAD_BYTES = MAX_UPLOAD_MB * 1024 * 1024

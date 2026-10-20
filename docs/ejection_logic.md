@@ -1,6 +1,6 @@
 # Ejection logic (V2)
 
-> bambu-sequencer - how the toolhead pushes printed parts off the plate,
+> PlateLoop - how the toolhead pushes printed parts off the plate,
 > one by one, without any extra hardware.
 >
 > This document is the design reference for `app/gcode.py`

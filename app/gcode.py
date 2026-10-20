@@ -15,7 +15,7 @@ Kinematics (A1 bedslinger):
 """
 import re
 
-EJECT_BEGIN = "; ===== bambu-sequencer auto-ejection (generated) ====="
+EJECT_BEGIN = "; ===== plate-loop auto-ejection (generated) ====="
 EJECT_END = "; ===== end auto-ejection ====="
 
 EXEC_START = "; EXECUTABLE_BLOCK_START"
@@ -630,7 +630,7 @@ def build_multi_plate_sequence(
             info = pinfo[idx]
             if eject_enabled and not first_job:
                 parts.append(
-                    f"\n; ===== bambu-sequencer print {job_no} of {total_jobs} "
+                    f"\n; ===== plate-loop print {job_no} of {total_jobs} "
                     f"(plate {idx}, print {c + 1} of {n}) =====\n"
                 )
                 parts.append(info["reheat"])

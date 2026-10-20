@@ -1,5 +1,5 @@
 services:
-  bambu-sequencer:
+  plate-loop:
     build: .
     ports:
       - "8080:8000"

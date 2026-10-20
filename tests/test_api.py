@@ -11,7 +11,7 @@ sys.path.insert(0, ".")
 
 def test_index(client):
     r = client.get("/")
-    assert r.status_code == 200 and "bambu-sequencer" in r.text
+    assert r.status_code == 200 and "PlateLoop" in r.text
 
 
 def test_inspect(client, tall_3mf):

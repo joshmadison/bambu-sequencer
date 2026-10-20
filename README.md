@@ -1,9 +1,9 @@
-# bambu-sequencer
+# PlateLoop
 
 Self-hosted web app that turns sliced Bambu Lab print files into an
 **automatic multi-copy sequence**: print → cool → the toolhead pushes the
 part off the plate's front edge into a container → re-heat → next copy.
-[![CI](https://github.com/joshmadison/bambu-sequencer/actions/workflows/ci.yml/badge.svg)](../../actions)
+[![CI](https://github.com/joshmadison/plate-loop/actions/workflows/ci.yml/badge.svg)](../../actions)
 
 Multi-plate files are supported too: configure the prints per plate and the
 app merges everything into ONE file that runs plate after plate.
@@ -62,8 +62,8 @@ build anything.
 ### Docker (recommended, also for a homeserver)
 
 ```bash
-git clone https://github.com/joshmadison/bambu-sequencer.git
-cd bambu-sequencer
+git clone https://github.com/joshmadison/plate-loop.git
+cd plate-loop
 docker compose up -d
 # open http://localhost:8080
 ```
@@ -79,7 +79,7 @@ environment:
 ### Local (no Docker)
 
 ```bash
-cd bambu-sequencer
+cd plate-loop
 python -m venv venv
 venv/Scripts/pip install -r requirements.txt   # Linux/macOS: venv/bin/pip
 venv/Scripts/python -m app.main                # Linux/macOS: venv/bin/python -m app.main
