@@ -35,7 +35,7 @@ from .threemf import (
 )
 
 app = FastAPI(title="PlateLoop", version="0.4.0")
-log = logging.getLogger("plate-loop")
+log = logging.getLogger("plateloop")
 
 MAX_UPLOAD_MB = int(os.environ.get("MAX_UPLOAD_MB", "300"))
 MAX_UPLOAD_BYTES = MAX_UPLOAD_MB * 1024 * 1024

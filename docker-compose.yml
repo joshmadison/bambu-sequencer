@@ -1,5 +1,5 @@
 services:
-  plate-loop:
+  plateloop:
     build: .
     ports:
       - "8080:8000"

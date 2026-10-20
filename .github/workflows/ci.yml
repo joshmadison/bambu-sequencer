@@ -32,11 +32,11 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build Docker image
-        run: docker build -t plate-loop:ci .
+        run: docker build -t plateloop:ci .
 
       - name: Smoke test
         run: |
-          docker run -d --name smoke -p 8080:8000 plate-loop:ci
+          docker run -d --name smoke -p 8080:8000 plateloop:ci
           for i in $(seq 1 30); do
             if curl -sf http://localhost:8080/api/printers > /dev/null; then
               echo "smoke OK"; exit 0
