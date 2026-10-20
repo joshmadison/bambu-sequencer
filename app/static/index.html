@@ -1589,6 +1589,36 @@ function drawAnim() {
   const stateFrom = (from.objects && from.objects.length) ? from.objects : fallbackState;
   const stateTo = (to.objects && to.objects.length) ? to.objects : fallbackState;
   const objectIds = [...new Set([...stateFrom, ...stateTo].map(o => o.index))];
+
+  // During a push the toolhead first travels to the object without moving it.
+  // Derive the object positions from the toolhead Y with the same lane rule as
+  // the generator, so nothing starts moving before contact.
+  const pushDy = (to.toolhead && from.toolhead) ? to.toolhead.y - from.toolhead.y : 0;
+  const active = to.obj_index !== undefined ? to.obj_index : from.obj_index;
+  let laneDys = null;
+  if (pushDy < -1e-6 && active !== undefined && objs[active]) {
+    const halfLane = ((d.toolhead_dims && d.toolhead_dims.width) || 36) / 2;
+    const cx = (objs[active].x_min + objs[active].x_max) / 2;
+    const goneBefore = new Set(stateFrom.filter(o => o.gone).map(o => o.index));
+    const lane = [];
+    for (let i = 0; i < objs.length; i++) {
+      if (i === active || goneBefore.has(i)) continue;
+      const ob = objs[i];
+      if (ob.x_max > cx - halfLane && ob.x_min < cx + halfLane) lane.push(i);
+    }
+    lane.sort((a, b) => objs[b].y_max - objs[a].y_max);
+    lane.unshift(active);
+    laneDys = {};
+    let prev = null;
+    for (const i of lane) {
+      const d = prev === null
+        ? Math.min(0, f.toolhead.y - objs[i].y_max)
+        : Math.min(0, laneDys[prev] + (objs[prev].y_min - objs[i].y_max));
+      laneDys[i] = d;
+      prev = i;
+    }
+  }
+
   const state = objectIds.map(index => {
     const a = stateFrom.find(o => o.index === index) || stateTo.find(o => o.index === index);
     const b = stateTo.find(o => o.index === index) || a;
@@ -1604,12 +1634,13 @@ function drawAnim() {
     const aRear = a && a.y_rear != null ? a.y_rear : (b && b.y_rear);
     const bRear = b && b.y_rear != null ? b.y_rear
       : (a && a.y_rear != null ? a.y_rear + dy : aRear);
+    const pushed = laneDys && laneDys[index] !== undefined && objs[index];
     return {
       ...a,
       ...b,
       index,
-      y_front: mix(aFront, bFront),
-      y_rear: mix(aRear, bRear),
+      y_front: pushed ? objs[index].y_min + laneDys[index] : mix(aFront, bFront),
+      y_rear: pushed ? objs[index].y_max + laneDys[index] : mix(aRear, bRear),
       opacity,
       gone: opacity <= 0.01
     };
