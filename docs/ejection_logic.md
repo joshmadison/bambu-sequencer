@@ -38,6 +38,14 @@ Derived from a real, natively sliced A1 `.gcode.3mf` file.
 where nothing stands. The push = Y monotonically decreasing to
 `front_lip`.
 
+**Other vendors (schema v5).** Only some profiles carry a park position
+beyond the printable area (Elegoo Centauri/Carbon and Anycubic Kobra S1 do).
+For every other non-Bambu model the database stores
+`rear_command_limit_source = no_park` and `rear_limit = printable.y`: the
+pusher starts at the rear bed edge, so the rear-most object must keep the
+toolhead footprint (~35 mm) clear of that edge. All non-Bambu models are
+marked *needs a test print* until this is confirmed on hardware.
+
 ---
 
 ## 3. Parameters
@@ -60,6 +68,9 @@ where nothing stands. The push = Y monotonically decreasing to
 | `front_lip_y` | Y position: plate front edge (push end) | 0 mm |
 | `printable.x` | Printable width | 256 mm |
 | `printable.y` | Printable depth | 256 mm |
+
+If no park zone exists (`rear_command_limit_source = no_park`), the pusher
+starts at `rear_command_limit = printable.y` instead.
 
 ### 3.3 Parsed from the 3MF file
 

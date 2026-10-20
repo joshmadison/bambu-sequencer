@@ -1,8 +1,67 @@
 {
-  "version": 4,
-  "updated": "2026-10-01",
-  "source": "BambuStudio master da8b44e (2026-09-28) + OrcaSlicer 03377a0 (2026-10-01) BBL machine profiles (base 0.4 nozzle + fdm_bbl_3dp_001/002_common resolved); park Y verified against native machine_end_gcode / real A1 gcode; toolhead footprint (draw_*) are app estimates - see PRINTER_DB_SOURCES.md | schema v4: grouped machine/kinematics/toolhead",
+  "version": 5,
+  "updated": "2026-10-21",
+  "source": "Bambu: BambuStudio master da8b44e + OrcaSlicer 03377a0 BBL profiles. Prusa/Creality/Elegoo/Anycubic/QIDI/Sovol/Voron: OrcaSlicer 2457173 (2026-10-20) 0.4 mm machine profiles (inherits resolved); park Y from the native machine_end_gcode; toolhead body height/footprint are app estimates - see PRINTER_DB_SOURCES.md | schema v5: vendors + no_park",
   "default": "A1",
+  "vendors": {
+    "bambu": {
+      "label": "Bambu Lab",
+      "prefixes": [
+        "Bambu Lab "
+      ],
+      "order": 1
+    },
+    "prusa": {
+      "label": "Prusa Research",
+      "prefixes": [
+        "Prusa "
+      ],
+      "order": 2
+    },
+    "creality": {
+      "label": "Creality",
+      "prefixes": [
+        "Creality "
+      ],
+      "order": 3
+    },
+    "elegoo": {
+      "label": "Elegoo",
+      "prefixes": [
+        "Elegoo "
+      ],
+      "order": 4
+    },
+    "anycubic": {
+      "label": "Anycubic",
+      "prefixes": [
+        "Anycubic "
+      ],
+      "order": 5
+    },
+    "qidi": {
+      "label": "QIDI Tech",
+      "prefixes": [
+        "Qidi ",
+        "QIDI "
+      ],
+      "order": 6
+    },
+    "sovol": {
+      "label": "Sovol",
+      "prefixes": [
+        "Sovol "
+      ],
+      "order": 7
+    },
+    "voron": {
+      "label": "Voron (community)",
+      "prefixes": [
+        "Voron "
+      ],
+      "order": 8
+    }
+  },
   "provenance_levels": {
     "verified_gcode": {
       "label": "verified",
@@ -15,6 +74,10 @@
     "estimate": {
       "label": "estimated",
       "description": "Not confirmed - verify on hardware before unattended use"
+    },
+    "no_park": {
+      "label": "no park zone",
+      "description": "No rear park in the vendor end gcode - the pusher starts at the rear edge of the printable area"
     }
   },
   "structures": {
@@ -44,6 +107,7 @@
   "printers": {
     "A1": {
       "name": "A1",
+      "vendor": "bambu",
       "machine": {
         "printable": {
           "x": 256.0,
@@ -77,6 +141,7 @@
     },
     "A1 mini": {
       "name": "A1 mini",
+      "vendor": "bambu",
       "machine": {
         "printable": {
           "x": 180.0,
@@ -110,6 +175,7 @@
     },
     "A2L": {
       "name": "A2L",
+      "vendor": "bambu",
       "machine": {
         "printable": {
           "x": 330.0,
@@ -143,6 +209,7 @@
     },
     "X1C": {
       "name": "X1C",
+      "vendor": "bambu",
       "machine": {
         "printable": {
           "x": 256.0,
@@ -176,6 +243,7 @@
     },
     "X1": {
       "name": "X1",
+      "vendor": "bambu",
       "machine": {
         "printable": {
           "x": 256.0,
@@ -209,6 +277,7 @@
     },
     "X1E": {
       "name": "X1E",
+      "vendor": "bambu",
       "machine": {
         "printable": {
           "x": 256.0,
@@ -242,6 +311,7 @@
     },
     "P1P": {
       "name": "P1P",
+      "vendor": "bambu",
       "machine": {
         "printable": {
           "x": 256.0,
@@ -275,6 +345,7 @@
     },
     "P1S": {
       "name": "P1S",
+      "vendor": "bambu",
       "machine": {
         "printable": {
           "x": 256.0,
@@ -308,6 +379,7 @@
     },
     "P2S": {
       "name": "P2S",
+      "vendor": "bambu",
       "machine": {
         "printable": {
           "x": 256.0,
@@ -341,6 +413,7 @@
     },
     "X2D": {
       "name": "X2D",
+      "vendor": "bambu",
       "machine": {
         "printable": {
           "x": 256.0,
@@ -374,6 +447,7 @@
     },
     "H2S": {
       "name": "H2S",
+      "vendor": "bambu",
       "machine": {
         "printable": {
           "x": 340.0,
@@ -407,6 +481,7 @@
     },
     "H2D": {
       "name": "H2D",
+      "vendor": "bambu",
       "machine": {
         "printable": {
           "x": 350.0,
@@ -440,6 +515,7 @@
     },
     "H2D Pro": {
       "name": "H2D Pro",
+      "vendor": "bambu",
       "machine": {
         "printable": {
           "x": 350.0,
@@ -473,6 +549,7 @@
     },
     "H2C": {
       "name": "H2C",
+      "vendor": "bambu",
       "machine": {
         "printable": {
           "x": 330.0,
@@ -503,6 +580,1091 @@
       "suitability": "needs-test",
       "suitability_note": "Same conditions as H2D on a slightly smaller bed",
       "source": "BambuStudio/OrcaSlicer GM041 + fdm_bbl_3dp_002_common; no behind-plate park (park Y estimated)"
+    },
+    "MK4S": {
+      "name": "MK4S",
+      "vendor": "prusa",
+      "machine": {
+        "printable": {
+          "x": 250.0,
+          "y": 210.0,
+          "z": 220.0
+        },
+        "structure": "bedslinger",
+        "bed_exclude": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      "kinematics": {
+        "rear_command_limit": 210.0,
+        "rear_command_limit_source": "no_park",
+        "front_lip_y": 0.0
+      },
+      "toolhead": {
+        "body_height": 5.0,
+        "clearance_radius": 45.0,
+        "dist_to_rod": 14.0,
+        "footprint": {
+          "width": 40.0,
+          "depth": 35.0,
+          "estimated": true
+        },
+        "estimated": true
+      },
+      "suitability": "needs-test",
+      "suitability_note": "OrcaSlicer 0.4 mm profile; no rear park zone (the end gcode parks at Y=170, inside the 210 mm bed), so the pusher starts at the rear bed edge and the rear-most part needs >= 35 mm clearance. Ejection, front clearance and park timing on Marlin/Prusa firmware need a test print.",
+      "source": "OrcaSlicer 2457173 Prusa MK4S 0.4 nozzle.json; park from machine_end_gcode; kinematics from vendor specs; body height/footprint are app estimates (no nozzle_height / machine_head_with_fans_polygon in the profile)"
+    },
+    "MK3S": {
+      "name": "MK3S",
+      "vendor": "prusa",
+      "machine": {
+        "printable": {
+          "x": 250.0,
+          "y": 210.0,
+          "z": 210.0
+        },
+        "structure": "bedslinger",
+        "bed_exclude": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      "kinematics": {
+        "rear_command_limit": 210.0,
+        "rear_command_limit_source": "no_park",
+        "front_lip_y": 0.0
+      },
+      "toolhead": {
+        "body_height": 5.0,
+        "clearance_radius": 65.0,
+        "dist_to_rod": 36.0,
+        "footprint": {
+          "width": 40.0,
+          "depth": 35.0,
+          "estimated": true
+        },
+        "estimated": true
+      },
+      "suitability": "needs-test",
+      "suitability_note": "OrcaSlicer 0.4 mm profile; no rear park zone (the end gcode parks at Y=200, inside the 210 mm bed), so the pusher starts at the rear bed edge and the rear-most part needs >= 35 mm clearance. Ejection, front clearance and park timing on Marlin/Prusa firmware need a test print.",
+      "source": "OrcaSlicer 2457173 Prusa MK3S 0.4 nozzle.json; park from machine_end_gcode; kinematics from vendor specs; body height/footprint are app estimates (no nozzle_height / machine_head_with_fans_polygon in the profile)"
+    },
+    "MK3.5": {
+      "name": "MK3.5",
+      "vendor": "prusa",
+      "machine": {
+        "printable": {
+          "x": 250.0,
+          "y": 210.0,
+          "z": 210.0
+        },
+        "structure": "bedslinger",
+        "bed_exclude": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      "kinematics": {
+        "rear_command_limit": 210.0,
+        "rear_command_limit_source": "no_park",
+        "front_lip_y": 0.0
+      },
+      "toolhead": {
+        "body_height": 5.0,
+        "clearance_radius": 65.0,
+        "dist_to_rod": 36.0,
+        "footprint": {
+          "width": 40.0,
+          "depth": 35.0,
+          "estimated": true
+        },
+        "estimated": true
+      },
+      "suitability": "needs-test",
+      "suitability_note": "OrcaSlicer 0.4 mm profile; no rear park zone (the end gcode parks at Y=201, inside the 210 mm bed), so the pusher starts at the rear bed edge and the rear-most part needs >= 35 mm clearance. Ejection, front clearance and park timing on Marlin/Prusa firmware need a test print.",
+      "source": "OrcaSlicer 2457173 Prusa MK3.5 0.4 nozzle.json; park from machine_end_gcode; kinematics from vendor specs; body height/footprint are app estimates (no nozzle_height / machine_head_with_fans_polygon in the profile)"
+    },
+    "MINI": {
+      "name": "MINI",
+      "vendor": "prusa",
+      "machine": {
+        "printable": {
+          "x": 180.0,
+          "y": 180.0,
+          "z": 180.0
+        },
+        "structure": "bedslinger",
+        "bed_exclude": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      "kinematics": {
+        "rear_command_limit": 180.0,
+        "rear_command_limit_source": "no_park",
+        "front_lip_y": 0.0
+      },
+      "toolhead": {
+        "body_height": 5.0,
+        "clearance_radius": 65.0,
+        "dist_to_rod": 36.0,
+        "footprint": {
+          "width": 40.0,
+          "depth": 35.0,
+          "estimated": true
+        },
+        "estimated": true
+      },
+      "suitability": "needs-test",
+      "suitability_note": "OrcaSlicer 0.4 mm profile; no rear park zone (the end gcode parks at Y=178, inside the 180 mm bed), so the pusher starts at the rear bed edge and the rear-most part needs >= 35 mm clearance. Ejection, front clearance and park timing on Marlin/Prusa firmware need a test print.",
+      "source": "OrcaSlicer 2457173 Prusa MINI 0.4 nozzle.json; park from machine_end_gcode; kinematics from vendor specs; body height/footprint are app estimates (no nozzle_height / machine_head_with_fans_polygon in the profile)"
+    },
+    "CORE One": {
+      "name": "CORE One",
+      "vendor": "prusa",
+      "machine": {
+        "printable": {
+          "x": 250.0,
+          "y": 220.0,
+          "z": 270.0
+        },
+        "structure": "corexy",
+        "bed_exclude": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      "kinematics": {
+        "rear_command_limit": 220.0,
+        "rear_command_limit_source": "no_park",
+        "front_lip_y": 0.0
+      },
+      "toolhead": {
+        "body_height": 5.0,
+        "clearance_radius": 75.0,
+        "dist_to_rod": 33.0,
+        "footprint": {
+          "width": 40.0,
+          "depth": 35.0,
+          "estimated": true
+        },
+        "estimated": true
+      },
+      "suitability": "needs-test",
+      "suitability_note": "OrcaSlicer 0.4 mm profile; no rear park zone (the end gcode parks in front of the plate (Y=-9)), so the pusher starts at the rear bed edge and the rear-most part needs >= 35 mm clearance. Ejection, front clearance and park timing on Marlin/Prusa firmware need a test print.",
+      "source": "OrcaSlicer 2457173 Prusa CORE One 0.4 nozzle.json; park from machine_end_gcode; kinematics from vendor specs; body height/footprint are app estimates (no nozzle_height / machine_head_with_fans_polygon in the profile)"
+    },
+    "XL": {
+      "name": "XL",
+      "vendor": "prusa",
+      "machine": {
+        "printable": {
+          "x": 360.0,
+          "y": 360.0,
+          "z": 360.0
+        },
+        "structure": "corexy",
+        "bed_exclude": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      "kinematics": {
+        "rear_command_limit": 360.0,
+        "rear_command_limit_source": "no_park",
+        "front_lip_y": 0.0
+      },
+      "toolhead": {
+        "body_height": 5.0,
+        "clearance_radius": 67.0,
+        "dist_to_rod": 21.0,
+        "footprint": {
+          "width": 40.0,
+          "depth": 35.0,
+          "estimated": true
+        },
+        "estimated": true
+      },
+      "suitability": "needs-test",
+      "suitability_note": "OrcaSlicer 0.4 mm profile; no rear park zone (the end gcode parks at Y=350, inside the 360 mm bed), so the pusher starts at the rear bed edge and the rear-most part needs >= 35 mm clearance. Ejection, front clearance and park timing on Marlin/Prusa firmware need a test print.",
+      "source": "OrcaSlicer 2457173 Prusa XL 0.4 nozzle.json; park from machine_end_gcode; kinematics from vendor specs; body height/footprint are app estimates (no nozzle_height / machine_head_with_fans_polygon in the profile)"
+    },
+    "K1": {
+      "name": "K1",
+      "vendor": "creality",
+      "machine": {
+        "printable": {
+          "x": 220.0,
+          "y": 220.0,
+          "z": 250.0
+        },
+        "structure": "corexy",
+        "bed_exclude": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      "kinematics": {
+        "rear_command_limit": 220.0,
+        "rear_command_limit_source": "no_park",
+        "front_lip_y": 0.0
+      },
+      "toolhead": {
+        "body_height": 5.0,
+        "clearance_radius": 65.0,
+        "dist_to_rod": 45.0,
+        "footprint": {
+          "width": 40.0,
+          "depth": 35.0,
+          "estimated": true
+        },
+        "estimated": true
+      },
+      "suitability": "needs-test",
+      "suitability_note": "OrcaSlicer 0.4 mm profile; no rear park zone (no Y park in the end gcode), so the pusher starts at the rear bed edge and the rear-most part needs >= 35 mm clearance. Ejection, front clearance and park timing on vendor firmware need a test print.",
+      "source": "OrcaSlicer 2457173 Creality K1 (0.4 nozzle).json; park from machine_end_gcode; kinematics from vendor specs; body height/footprint are app estimates (no nozzle_height / machine_head_with_fans_polygon in the profile)"
+    },
+    "K1C": {
+      "name": "K1C",
+      "vendor": "creality",
+      "machine": {
+        "printable": {
+          "x": 220.0,
+          "y": 220.0,
+          "z": 250.0
+        },
+        "structure": "corexy",
+        "bed_exclude": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      "kinematics": {
+        "rear_command_limit": 220.0,
+        "rear_command_limit_source": "no_park",
+        "front_lip_y": 0.0
+      },
+      "toolhead": {
+        "body_height": 5.0,
+        "clearance_radius": 65.0,
+        "dist_to_rod": 45.0,
+        "footprint": {
+          "width": 40.0,
+          "depth": 35.0,
+          "estimated": true
+        },
+        "estimated": true
+      },
+      "suitability": "needs-test",
+      "suitability_note": "OrcaSlicer 0.4 mm profile; no rear park zone (no Y park in the end gcode), so the pusher starts at the rear bed edge and the rear-most part needs >= 35 mm clearance. Ejection, front clearance and park timing on vendor firmware need a test print.",
+      "source": "OrcaSlicer 2457173 Creality K1C 0.4 nozzle.json; park from machine_end_gcode; kinematics from vendor specs; body height/footprint are app estimates (no nozzle_height / machine_head_with_fans_polygon in the profile)"
+    },
+    "K1 Max": {
+      "name": "K1 Max",
+      "vendor": "creality",
+      "machine": {
+        "printable": {
+          "x": 300.0,
+          "y": 300.0,
+          "z": 300.0
+        },
+        "structure": "corexy",
+        "bed_exclude": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      "kinematics": {
+        "rear_command_limit": 300.0,
+        "rear_command_limit_source": "no_park",
+        "front_lip_y": 0.0
+      },
+      "toolhead": {
+        "body_height": 5.0,
+        "clearance_radius": 65.0,
+        "dist_to_rod": 45.0,
+        "footprint": {
+          "width": 40.0,
+          "depth": 35.0,
+          "estimated": true
+        },
+        "estimated": true
+      },
+      "suitability": "needs-test",
+      "suitability_note": "OrcaSlicer 0.4 mm profile; no rear park zone (no Y park in the end gcode), so the pusher starts at the rear bed edge and the rear-most part needs >= 35 mm clearance. Ejection, front clearance and park timing on vendor firmware need a test print.",
+      "source": "OrcaSlicer 2457173 Creality K1 Max (0.4 nozzle).json; park from machine_end_gcode; kinematics from vendor specs; body height/footprint are app estimates (no nozzle_height / machine_head_with_fans_polygon in the profile)"
+    },
+    "K2 Plus": {
+      "name": "K2 Plus",
+      "vendor": "creality",
+      "machine": {
+        "printable": {
+          "x": 350.0,
+          "y": 350.0,
+          "z": 350.0
+        },
+        "structure": "corexy",
+        "bed_exclude": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      "kinematics": {
+        "rear_command_limit": 350.0,
+        "rear_command_limit_source": "no_park",
+        "front_lip_y": 0.0
+      },
+      "toolhead": {
+        "body_height": 5.0,
+        "clearance_radius": 64.0,
+        "dist_to_rod": 24.0,
+        "footprint": {
+          "width": 40.0,
+          "depth": 35.0,
+          "estimated": true
+        },
+        "estimated": true
+      },
+      "suitability": "needs-test",
+      "suitability_note": "OrcaSlicer 0.4 mm profile; no rear park zone (no Y park in the end gcode), so the pusher starts at the rear bed edge and the rear-most part needs >= 35 mm clearance. Ejection, front clearance and park timing on vendor firmware need a test print.",
+      "source": "OrcaSlicer 2457173 Creality K2 Plus 0.4 nozzle.json; park from machine_end_gcode; kinematics from vendor specs; body height/footprint are app estimates (no nozzle_height / machine_head_with_fans_polygon in the profile)"
+    },
+    "Ender-3 V3": {
+      "name": "Ender-3 V3",
+      "vendor": "creality",
+      "machine": {
+        "printable": {
+          "x": 220.0,
+          "y": 220.0,
+          "z": 250.0
+        },
+        "structure": "bedslinger",
+        "bed_exclude": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      "kinematics": {
+        "rear_command_limit": 220.0,
+        "rear_command_limit_source": "no_park",
+        "front_lip_y": 0.0
+      },
+      "toolhead": {
+        "body_height": 5.0,
+        "clearance_radius": 70.0,
+        "dist_to_rod": 14.0,
+        "footprint": {
+          "width": 40.0,
+          "depth": 35.0,
+          "estimated": true
+        },
+        "estimated": true
+      },
+      "suitability": "needs-test",
+      "suitability_note": "OrcaSlicer 0.4 mm profile; no rear park zone (no Y park in the end gcode), so the pusher starts at the rear bed edge and the rear-most part needs >= 35 mm clearance. Ejection, front clearance and park timing on vendor firmware need a test print.",
+      "source": "OrcaSlicer 2457173 Creality Ender-3 V3 0.4 nozzle.json; park from machine_end_gcode; kinematics from vendor specs; body height/footprint are app estimates (no nozzle_height / machine_head_with_fans_polygon in the profile)"
+    },
+    "Ender-3 V3 KE": {
+      "name": "Ender-3 V3 KE",
+      "vendor": "creality",
+      "machine": {
+        "printable": {
+          "x": 220.0,
+          "y": 220.0,
+          "z": 245.0
+        },
+        "structure": "bedslinger",
+        "bed_exclude": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      "kinematics": {
+        "rear_command_limit": 220.0,
+        "rear_command_limit_source": "no_park",
+        "front_lip_y": 0.0
+      },
+      "toolhead": {
+        "body_height": 5.0,
+        "clearance_radius": 90.0,
+        "dist_to_rod": 47.0,
+        "footprint": {
+          "width": 40.0,
+          "depth": 35.0,
+          "estimated": true
+        },
+        "estimated": true
+      },
+      "suitability": "needs-test",
+      "suitability_note": "OrcaSlicer 0.4 mm profile; no rear park zone (the end gcode parks at Y=218, inside the 220 mm bed), so the pusher starts at the rear bed edge and the rear-most part needs >= 35 mm clearance. Ejection, front clearance and park timing on vendor firmware need a test print.",
+      "source": "OrcaSlicer 2457173 Creality Ender-3 V3 KE 0.4 nozzle.json; park from machine_end_gcode; kinematics from vendor specs; body height/footprint are app estimates (no nozzle_height / machine_head_with_fans_polygon in the profile)"
+    },
+    "Centauri Carbon": {
+      "name": "Centauri Carbon",
+      "vendor": "elegoo",
+      "machine": {
+        "printable": {
+          "x": 256.0,
+          "y": 256.0,
+          "z": 256.0
+        },
+        "structure": "corexy",
+        "bed_exclude": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      "kinematics": {
+        "rear_command_limit": 264.5,
+        "rear_command_limit_source": "end_gcode_park",
+        "front_lip_y": 0.0
+      },
+      "toolhead": {
+        "body_height": 5.0,
+        "clearance_radius": 68.0,
+        "dist_to_rod": 36.0,
+        "footprint": {
+          "width": 40.0,
+          "depth": 35.0,
+          "estimated": true
+        },
+        "estimated": true
+      },
+      "suitability": "needs-test",
+      "suitability_note": "OrcaSlicer 0.4 mm profile; native end gcode parks at Y=264.5 (8.5 mm behind the 256 mm bed) - reachable. Front push, chamber cooldown and front clearance on vendor firmware need a test print.",
+      "source": "OrcaSlicer 2457173 Elegoo Centauri Carbon 0.4 nozzle.json; park from machine_end_gcode; kinematics from vendor specs; body height/footprint are app estimates (no nozzle_height / machine_head_with_fans_polygon in the profile)"
+    },
+    "Centauri": {
+      "name": "Centauri",
+      "vendor": "elegoo",
+      "machine": {
+        "printable": {
+          "x": 256.0,
+          "y": 256.0,
+          "z": 256.0
+        },
+        "structure": "corexy",
+        "bed_exclude": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      "kinematics": {
+        "rear_command_limit": 264.5,
+        "rear_command_limit_source": "end_gcode_park",
+        "front_lip_y": 0.0
+      },
+      "toolhead": {
+        "body_height": 5.0,
+        "clearance_radius": 68.0,
+        "dist_to_rod": 36.0,
+        "footprint": {
+          "width": 40.0,
+          "depth": 35.0,
+          "estimated": true
+        },
+        "estimated": true
+      },
+      "suitability": "needs-test",
+      "suitability_note": "OrcaSlicer 0.4 mm profile; native end gcode parks at Y=264.5 (8.5 mm behind the 256 mm bed) - reachable. Front push, chamber cooldown and front clearance on vendor firmware need a test print.",
+      "source": "OrcaSlicer 2457173 Elegoo Centauri 0.4 nozzle.json; park from machine_end_gcode; kinematics from vendor specs; body height/footprint are app estimates (no nozzle_height / machine_head_with_fans_polygon in the profile)"
+    },
+    "Neptune 4 Pro": {
+      "name": "Neptune 4 Pro",
+      "vendor": "elegoo",
+      "machine": {
+        "printable": {
+          "x": 230.0,
+          "y": 230.0,
+          "z": 265.0
+        },
+        "structure": "bedslinger",
+        "bed_exclude": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      "kinematics": {
+        "rear_command_limit": 230.0,
+        "rear_command_limit_source": "no_park",
+        "front_lip_y": 0.0
+      },
+      "toolhead": {
+        "body_height": 5.0,
+        "clearance_radius": 68.0,
+        "dist_to_rod": 34.0,
+        "footprint": {
+          "width": 40.0,
+          "depth": 35.0,
+          "estimated": true
+        },
+        "estimated": true
+      },
+      "suitability": "needs-test",
+      "suitability_note": "OrcaSlicer 0.4 mm profile; no rear park zone (no Y park in the end gcode), so the pusher starts at the rear bed edge and the rear-most part needs >= 35 mm clearance. Ejection, front clearance and park timing on vendor firmware need a test print.",
+      "source": "OrcaSlicer 2457173 Elegoo Neptune 4 Pro 0.4 nozzle.json; park from machine_end_gcode; kinematics from vendor specs; body height/footprint are app estimates (no nozzle_height / machine_head_with_fans_polygon in the profile)"
+    },
+    "Neptune 4 Max": {
+      "name": "Neptune 4 Max",
+      "vendor": "elegoo",
+      "machine": {
+        "printable": {
+          "x": 426.0,
+          "y": 426.0,
+          "z": 480.0
+        },
+        "structure": "bedslinger",
+        "bed_exclude": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      "kinematics": {
+        "rear_command_limit": 426.0,
+        "rear_command_limit_source": "no_park",
+        "front_lip_y": 0.0
+      },
+      "toolhead": {
+        "body_height": 5.0,
+        "clearance_radius": 68.0,
+        "dist_to_rod": 34.0,
+        "footprint": {
+          "width": 40.0,
+          "depth": 35.0,
+          "estimated": true
+        },
+        "estimated": true
+      },
+      "suitability": "needs-test",
+      "suitability_note": "OrcaSlicer 0.4 mm profile; no rear park zone (no Y park in the end gcode), so the pusher starts at the rear bed edge and the rear-most part needs >= 35 mm clearance. Ejection, front clearance and park timing on vendor firmware need a test print.",
+      "source": "OrcaSlicer 2457173 Elegoo Neptune 4 Max 0.4 nozzle.json; park from machine_end_gcode; kinematics from vendor specs; body height/footprint are app estimates (no nozzle_height / machine_head_with_fans_polygon in the profile)"
+    },
+    "Kobra 3": {
+      "name": "Kobra 3",
+      "vendor": "anycubic",
+      "machine": {
+        "printable": {
+          "x": 255.0,
+          "y": 255.0,
+          "z": 260.0
+        },
+        "structure": "bedslinger",
+        "bed_exclude": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      "kinematics": {
+        "rear_command_limit": 255.0,
+        "rear_command_limit_source": "no_park",
+        "front_lip_y": 0.0
+      },
+      "toolhead": {
+        "body_height": 4.0,
+        "clearance_radius": 130.0,
+        "dist_to_rod": 30.0,
+        "footprint": {
+          "width": 40.0,
+          "depth": 35.0,
+          "estimated": true
+        },
+        "estimated": true
+      },
+      "suitability": "needs-test",
+      "suitability_note": "OrcaSlicer 0.4 mm profile; no rear park zone (the end gcode parks at Y=220, inside the 255 mm bed), so the pusher starts at the rear bed edge and the rear-most part needs >= 35 mm clearance. Ejection, front clearance and park timing on vendor firmware need a test print.",
+      "source": "OrcaSlicer 2457173 Anycubic Kobra 3 0.4 nozzle.json; park from machine_end_gcode; kinematics from vendor specs; body height/footprint are app estimates (no nozzle_height / machine_head_with_fans_polygon in the profile)"
+    },
+    "Kobra 3 Max": {
+      "name": "Kobra 3 Max",
+      "vendor": "anycubic",
+      "machine": {
+        "printable": {
+          "x": 426.0,
+          "y": 420.0,
+          "z": 501.0
+        },
+        "structure": "bedslinger",
+        "bed_exclude": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      "kinematics": {
+        "rear_command_limit": 420.0,
+        "rear_command_limit_source": "no_park",
+        "front_lip_y": 0.0
+      },
+      "toolhead": {
+        "body_height": 4.0,
+        "clearance_radius": 57.0,
+        "dist_to_rod": 20.0,
+        "footprint": {
+          "width": 40.0,
+          "depth": 35.0,
+          "estimated": true
+        },
+        "estimated": true
+      },
+      "suitability": "needs-test",
+      "suitability_note": "OrcaSlicer 0.4 mm profile; no rear park zone (the end gcode parks at the rear edge (Y=420)), so the pusher starts at the rear bed edge and the rear-most part needs >= 35 mm clearance. Ejection, front clearance and park timing on vendor firmware need a test print.",
+      "source": "OrcaSlicer 2457173 Anycubic Kobra 3 Max 0.4 nozzle.json; park from machine_end_gcode; kinematics from vendor specs; body height/footprint are app estimates (no nozzle_height / machine_head_with_fans_polygon in the profile)"
+    },
+    "Kobra S1": {
+      "name": "Kobra S1",
+      "vendor": "anycubic",
+      "machine": {
+        "printable": {
+          "x": 250.0,
+          "y": 250.0,
+          "z": 250.0
+        },
+        "structure": "corexy",
+        "bed_exclude": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      "kinematics": {
+        "rear_command_limit": 270.0,
+        "rear_command_limit_source": "end_gcode_park",
+        "front_lip_y": 0.0
+      },
+      "toolhead": {
+        "body_height": 4.0,
+        "clearance_radius": 60.0,
+        "dist_to_rod": 48.0,
+        "footprint": {
+          "width": 40.0,
+          "depth": 35.0,
+          "estimated": true
+        },
+        "estimated": true
+      },
+      "suitability": "needs-test",
+      "suitability_note": "OrcaSlicer 0.4 mm profile; native end gcode parks at Y=270 (20 mm behind the 250 mm bed) - reachable. Front push, chamber cooldown and front clearance on vendor firmware need a test print.",
+      "source": "OrcaSlicer 2457173 Anycubic Kobra S1 0.4 nozzle.json; park from machine_end_gcode; kinematics from vendor specs; body height/footprint are app estimates (no nozzle_height / machine_head_with_fans_polygon in the profile)"
+    },
+    "Kobra S1 Max": {
+      "name": "Kobra S1 Max",
+      "vendor": "anycubic",
+      "machine": {
+        "printable": {
+          "x": 350.0,
+          "y": 350.0,
+          "z": 350.0
+        },
+        "structure": "corexy",
+        "bed_exclude": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      "kinematics": {
+        "rear_command_limit": 350.0,
+        "rear_command_limit_source": "no_park",
+        "front_lip_y": 0.0
+      },
+      "toolhead": {
+        "body_height": 4.0,
+        "clearance_radius": 55.0,
+        "dist_to_rod": 30.0,
+        "footprint": {
+          "width": 40.0,
+          "depth": 35.0,
+          "estimated": true
+        },
+        "estimated": true
+      },
+      "suitability": "needs-test",
+      "suitability_note": "OrcaSlicer 0.4 mm profile; no rear park zone (no Y park in the end gcode), so the pusher starts at the rear bed edge and the rear-most part needs >= 35 mm clearance. Ejection, front clearance and park timing on vendor firmware need a test print.",
+      "source": "OrcaSlicer 2457173 Anycubic Kobra S1 Max 0.4 nozzle.json; park from machine_end_gcode; kinematics from vendor specs; body height/footprint are app estimates (no nozzle_height / machine_head_with_fans_polygon in the profile)"
+    },
+    "Q1 Pro": {
+      "name": "Q1 Pro",
+      "vendor": "qidi",
+      "machine": {
+        "printable": {
+          "x": 245.0,
+          "y": 245.0,
+          "z": 240.0
+        },
+        "structure": "corexy",
+        "bed_exclude": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      "kinematics": {
+        "rear_command_limit": 245.0,
+        "rear_command_limit_source": "no_park",
+        "front_lip_y": 0.0
+      },
+      "toolhead": {
+        "body_height": 5.0,
+        "clearance_radius": 70.0,
+        "dist_to_rod": 40.0,
+        "footprint": {
+          "width": 40.0,
+          "depth": 35.0,
+          "estimated": true
+        },
+        "estimated": true
+      },
+      "suitability": "needs-test",
+      "suitability_note": "OrcaSlicer 0.4 mm profile; no rear park zone (the end gcode parks at Y=0, inside the 245 mm bed), so the pusher starts at the rear bed edge and the rear-most part needs >= 35 mm clearance. Ejection, front clearance and park timing on Klipper/machine macros need a test print.",
+      "source": "OrcaSlicer 2457173 Qidi Q1 Pro 0.4 nozzle.json; park from machine_end_gcode; kinematics from vendor specs; body height/footprint are app estimates (no nozzle_height / machine_head_with_fans_polygon in the profile)"
+    },
+    "X-Plus 4": {
+      "name": "X-Plus 4",
+      "vendor": "qidi",
+      "machine": {
+        "printable": {
+          "x": 305.0,
+          "y": 305.0,
+          "z": 280.0
+        },
+        "structure": "corexy",
+        "bed_exclude": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      "kinematics": {
+        "rear_command_limit": 305.0,
+        "rear_command_limit_source": "no_park",
+        "front_lip_y": 0.0
+      },
+      "toolhead": {
+        "body_height": 5.0,
+        "clearance_radius": 72.0,
+        "dist_to_rod": 32.0,
+        "footprint": {
+          "width": 40.0,
+          "depth": 35.0,
+          "estimated": true
+        },
+        "estimated": true
+      },
+      "suitability": "needs-test",
+      "suitability_note": "OrcaSlicer 0.4 mm profile; no rear park zone (the end gcode parks at Y=290, inside the 305 mm bed), so the pusher starts at the rear bed edge and the rear-most part needs >= 35 mm clearance. Ejection, front clearance and park timing on Klipper/machine macros need a test print.",
+      "source": "OrcaSlicer 2457173 Qidi X-Plus 4 0.4 nozzle.json; park from machine_end_gcode; kinematics from vendor specs; body height/footprint are app estimates (no nozzle_height / machine_head_with_fans_polygon in the profile)"
+    },
+    "X-Max 4": {
+      "name": "X-Max 4",
+      "vendor": "qidi",
+      "machine": {
+        "printable": {
+          "x": 390.0,
+          "y": 390.0,
+          "z": 340.0
+        },
+        "structure": "corexy",
+        "bed_exclude": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      "kinematics": {
+        "rear_command_limit": 390.0,
+        "rear_command_limit_source": "no_park",
+        "front_lip_y": 0.0
+      },
+      "toolhead": {
+        "body_height": 5.0,
+        "clearance_radius": 80.0,
+        "dist_to_rod": 45.0,
+        "footprint": {
+          "width": 40.0,
+          "depth": 35.0,
+          "estimated": true
+        },
+        "estimated": true
+      },
+      "suitability": "needs-test",
+      "suitability_note": "OrcaSlicer 0.4 mm profile; no rear park zone (the end gcode parks at Y=380, inside the 390 mm bed), so the pusher starts at the rear bed edge and the rear-most part needs >= 35 mm clearance. Ejection, front clearance and park timing on Klipper/machine macros need a test print.",
+      "source": "OrcaSlicer 2457173 Qidi X-Max 4 0.4 nozzle.json; park from machine_end_gcode; kinematics from vendor specs; body height/footprint are app estimates (no nozzle_height / machine_head_with_fans_polygon in the profile)"
+    },
+    "Q2": {
+      "name": "Q2",
+      "vendor": "qidi",
+      "machine": {
+        "printable": {
+          "x": 270.0,
+          "y": 270.0,
+          "z": 256.0
+        },
+        "structure": "corexy",
+        "bed_exclude": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      "kinematics": {
+        "rear_command_limit": 270.0,
+        "rear_command_limit_source": "no_park",
+        "front_lip_y": 0.0
+      },
+      "toolhead": {
+        "body_height": 5.0,
+        "clearance_radius": 75.0,
+        "dist_to_rod": 47.0,
+        "footprint": {
+          "width": 40.0,
+          "depth": 35.0,
+          "estimated": true
+        },
+        "estimated": true
+      },
+      "suitability": "needs-test",
+      "suitability_note": "OrcaSlicer 0.4 mm profile; no rear park zone (the end gcode parks at the rear edge (Y=270)), so the pusher starts at the rear bed edge and the rear-most part needs >= 35 mm clearance. Ejection, front clearance and park timing on Klipper/machine macros need a test print.",
+      "source": "OrcaSlicer 2457173 Qidi Q2 0.4 nozzle.json; park from machine_end_gcode; kinematics from vendor specs; body height/footprint are app estimates (no nozzle_height / machine_head_with_fans_polygon in the profile)"
+    },
+    "SV06 ACE": {
+      "name": "SV06 ACE",
+      "vendor": "sovol",
+      "machine": {
+        "printable": {
+          "x": 220.0,
+          "y": 220.0,
+          "z": 250.0
+        },
+        "structure": "bedslinger",
+        "bed_exclude": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      "kinematics": {
+        "rear_command_limit": 220.0,
+        "rear_command_limit_source": "no_park",
+        "front_lip_y": 0.0
+      },
+      "toolhead": {
+        "body_height": 5.0,
+        "clearance_radius": 65.0,
+        "dist_to_rod": 36.0,
+        "footprint": {
+          "width": 40.0,
+          "depth": 35.0,
+          "estimated": true
+        },
+        "estimated": true
+      },
+      "suitability": "needs-test",
+      "suitability_note": "OrcaSlicer 0.4 mm profile; no rear park zone (no Y park in the end gcode), so the pusher starts at the rear bed edge and the rear-most part needs >= 35 mm clearance. Ejection, front clearance and park timing on Klipper/machine macros need a test print.",
+      "source": "OrcaSlicer 2457173 Sovol SV06 ACE 0.4 nozzle.json; park from machine_end_gcode; kinematics from vendor specs; body height/footprint are app estimates (no nozzle_height / machine_head_with_fans_polygon in the profile)"
+    },
+    "SV08": {
+      "name": "SV08",
+      "vendor": "sovol",
+      "machine": {
+        "printable": {
+          "x": 350.0,
+          "y": 350.0,
+          "z": 345.0
+        },
+        "structure": "corexy",
+        "bed_exclude": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      "kinematics": {
+        "rear_command_limit": 350.0,
+        "rear_command_limit_source": "no_park",
+        "front_lip_y": 0.0
+      },
+      "toolhead": {
+        "body_height": 5.0,
+        "clearance_radius": 65.0,
+        "dist_to_rod": 36.0,
+        "footprint": {
+          "width": 40.0,
+          "depth": 35.0,
+          "estimated": true
+        },
+        "estimated": true
+      },
+      "suitability": "needs-test",
+      "suitability_note": "OrcaSlicer 0.4 mm profile; no rear park zone (no Y park in the end gcode), so the pusher starts at the rear bed edge and the rear-most part needs >= 35 mm clearance. Ejection, front clearance and park timing on Klipper/machine macros need a test print.",
+      "source": "OrcaSlicer 2457173 Sovol SV08 0.4 nozzle.json; park from machine_end_gcode; kinematics from vendor specs; body height/footprint are app estimates (no nozzle_height / machine_head_with_fans_polygon in the profile)"
+    },
+    "SV08 MAX": {
+      "name": "SV08 MAX",
+      "vendor": "sovol",
+      "machine": {
+        "printable": {
+          "x": 500.0,
+          "y": 500.0,
+          "z": 500.0
+        },
+        "structure": "corexy",
+        "bed_exclude": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      "kinematics": {
+        "rear_command_limit": 500.0,
+        "rear_command_limit_source": "no_park",
+        "front_lip_y": 0.0
+      },
+      "toolhead": {
+        "body_height": 5.0,
+        "clearance_radius": 65.0,
+        "dist_to_rod": 36.0,
+        "footprint": {
+          "width": 40.0,
+          "depth": 35.0,
+          "estimated": true
+        },
+        "estimated": true
+      },
+      "suitability": "needs-test",
+      "suitability_note": "OrcaSlicer 0.4 mm profile; no rear park zone (no Y park in the end gcode), so the pusher starts at the rear bed edge and the rear-most part needs >= 35 mm clearance. Ejection, front clearance and park timing on Klipper/machine macros need a test print.",
+      "source": "OrcaSlicer 2457173 Sovol SV08 MAX 0.4 nozzle.json; park from machine_end_gcode; kinematics from vendor specs; body height/footprint are app estimates (no nozzle_height / machine_head_with_fans_polygon in the profile)"
+    },
+    "Zero": {
+      "name": "Zero",
+      "vendor": "sovol",
+      "machine": {
+        "printable": {
+          "x": 152.4,
+          "y": 152.4,
+          "z": 152.4
+        },
+        "structure": "corexy",
+        "bed_exclude": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      "kinematics": {
+        "rear_command_limit": 152.4,
+        "rear_command_limit_source": "no_park",
+        "front_lip_y": 0.0
+      },
+      "toolhead": {
+        "body_height": 5.0,
+        "clearance_radius": 65.0,
+        "dist_to_rod": 36.0,
+        "footprint": {
+          "width": 40.0,
+          "depth": 35.0,
+          "estimated": true
+        },
+        "estimated": true
+      },
+      "suitability": "needs-test",
+      "suitability_note": "OrcaSlicer 0.4 mm profile; no rear park zone (no Y park in the end gcode), so the pusher starts at the rear bed edge and the rear-most part needs >= 35 mm clearance. Ejection, front clearance and park timing on Klipper/machine macros need a test print.",
+      "source": "OrcaSlicer 2457173 Sovol Zero 0.4 nozzle.json; park from machine_end_gcode; kinematics from vendor specs; body height/footprint are app estimates (no nozzle_height / machine_head_with_fans_polygon in the profile)"
+    },
+    "Voron 2.4 350": {
+      "name": "Voron 2.4 350",
+      "vendor": "voron",
+      "machine": {
+        "printable": {
+          "x": 350.0,
+          "y": 350.0,
+          "z": 325.0
+        },
+        "structure": "corexy",
+        "bed_exclude": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      "kinematics": {
+        "rear_command_limit": 350.0,
+        "rear_command_limit_source": "no_park",
+        "front_lip_y": 0.0
+      },
+      "toolhead": {
+        "body_height": 5.0,
+        "clearance_radius": 50.0,
+        "dist_to_rod": 60.0,
+        "footprint": {
+          "width": 40.0,
+          "depth": 35.0,
+          "estimated": true
+        },
+        "estimated": true
+      },
+      "suitability": "needs-test",
+      "suitability_note": "OrcaSlicer 0.4 mm profile; no rear park zone (no Y park in the end gcode), so the pusher starts at the rear bed edge and the rear-most part needs >= 35 mm clearance. Ejection, front clearance and park timing on Klipper/machine macros need a test print.",
+      "source": "OrcaSlicer 2457173 Voron 2.4 350 0.4 nozzle.json; park from machine_end_gcode; kinematics from vendor specs; body height/footprint are app estimates (no nozzle_height / machine_head_with_fans_polygon in the profile)"
+    },
+    "Voron Trident 300": {
+      "name": "Voron Trident 300",
+      "vendor": "voron",
+      "machine": {
+        "printable": {
+          "x": 300.0,
+          "y": 300.0,
+          "z": 250.0
+        },
+        "structure": "corexy",
+        "bed_exclude": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      "kinematics": {
+        "rear_command_limit": 300.0,
+        "rear_command_limit_source": "no_park",
+        "front_lip_y": 0.0
+      },
+      "toolhead": {
+        "body_height": 5.0,
+        "clearance_radius": 50.0,
+        "dist_to_rod": 60.0,
+        "footprint": {
+          "width": 40.0,
+          "depth": 35.0,
+          "estimated": true
+        },
+        "estimated": true
+      },
+      "suitability": "needs-test",
+      "suitability_note": "OrcaSlicer 0.4 mm profile; no rear park zone (no Y park in the end gcode), so the pusher starts at the rear bed edge and the rear-most part needs >= 35 mm clearance. Ejection, front clearance and park timing on Klipper/machine macros need a test print.",
+      "source": "OrcaSlicer 2457173 Voron Trident 300 0.4 nozzle.json; park from machine_end_gcode; kinematics from vendor specs; body height/footprint are app estimates (no nozzle_height / machine_head_with_fans_polygon in the profile)"
+    },
+    "Voron 0.1": {
+      "name": "Voron 0.1",
+      "vendor": "voron",
+      "machine": {
+        "printable": {
+          "x": 120.0,
+          "y": 120.0,
+          "z": 120.0
+        },
+        "structure": "corexy",
+        "bed_exclude": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      "kinematics": {
+        "rear_command_limit": 120.0,
+        "rear_command_limit_source": "no_park",
+        "front_lip_y": 0.0
+      },
+      "toolhead": {
+        "body_height": 5.0,
+        "clearance_radius": 50.0,
+        "dist_to_rod": 60.0,
+        "footprint": {
+          "width": 40.0,
+          "depth": 35.0,
+          "estimated": true
+        },
+        "estimated": true
+      },
+      "suitability": "needs-test",
+      "suitability_note": "OrcaSlicer 0.4 mm profile; no rear park zone (no Y park in the end gcode), so the pusher starts at the rear bed edge and the rear-most part needs >= 35 mm clearance. Ejection, front clearance and park timing on Klipper/machine macros need a test print.",
+      "source": "OrcaSlicer 2457173 Voron 0.1 0.4 nozzle.json; park from machine_end_gcode; kinematics from vendor specs; body height/footprint are app estimates (no nozzle_height / machine_head_with_fans_polygon in the profile)"
     }
   },
   "aliases": {
@@ -519,6 +1681,64 @@
     "O1S": "H2S",
     "O1D": "H2D",
     "O1E": "H2D Pro",
-    "O1C2": "H2C"
+    "O1C2": "H2C",
+    "MK4S": "MK4S",
+    "Prusa MK4S": "MK4S",
+    "MK3S": "MK3S",
+    "Prusa MK3S": "MK3S",
+    "MK3.5": "MK3.5",
+    "Prusa MK3.5": "MK3.5",
+    "MINI": "MINI",
+    "Prusa MINI": "MINI",
+    "Prusa_CORE_One": "CORE One",
+    "Prusa CORE One": "CORE One",
+    "Prusa XL": "XL",
+    "Creality-K1": "K1",
+    "Creality K1": "K1",
+    "Creality-K1C": "K1C",
+    "Creality K1C": "K1C",
+    "Creality-K1-Max": "K1 Max",
+    "Creality K1 Max": "K1 Max",
+    "Creality-K2-Plus": "K2 Plus",
+    "Creality K2 Plus": "K2 Plus",
+    "Creality-Ender3-V3": "Ender-3 V3",
+    "Creality Ender-3 V3": "Ender-3 V3",
+    "Creality-Ender3-V3-KE": "Ender-3 V3 KE",
+    "Creality Ender-3 V3 KE": "Ender-3 V3 KE",
+    "Elegoo-CC": "Centauri Carbon",
+    "Elegoo Centauri Carbon": "Centauri Carbon",
+    "Elegoo-C": "Centauri",
+    "Elegoo Centauri": "Centauri",
+    "Elegoo-N4Pro": "Neptune 4 Pro",
+    "Elegoo Neptune 4 Pro": "Neptune 4 Pro",
+    "Elegoo-N4Max": "Neptune 4 Max",
+    "Elegoo Neptune 4 Max": "Neptune 4 Max",
+    "Anycubic Kobra 3": "Kobra 3",
+    "Anycubic Kobra 3 Max": "Kobra 3 Max",
+    "Anycubic Kobra S1": "Kobra S1",
+    "Anycubic Kobra S1 Max": "Kobra S1 Max",
+    "Qidi-Q1Pro": "Q1 Pro",
+    "Qidi Q1 Pro": "Q1 Pro",
+    "Qidi-XPlus-4": "X-Plus 4",
+    "Qidi X-Plus 4": "X-Plus 4",
+    "Qidi-XMax-4": "X-Max 4",
+    "Qidi X-Max 4": "X-Max 4",
+    "Qidi-Q2": "Q2",
+    "Qidi Q2": "Q2",
+    "Sovol-SV06-ACE": "SV06 ACE",
+    "Sovol SV06 ACE": "SV06 ACE",
+    "Sovol-SV08": "SV08",
+    "Sovol SV08": "SV08",
+    "Sovol-SV08 MAX": "SV08 MAX",
+    "Sovol SV08 MAX": "SV08 MAX",
+    "Sovol-Zero": "Zero",
+    "Sovol Zero": "Zero",
+    "Voron2_350": "Voron 2.4 350",
+    "Voron 2.4 350": "Voron 2.4 350",
+    "Voron2_Trident_300": "Voron Trident 300",
+    "Voron Trident 300": "Voron Trident 300",
+    "Voron0": "Voron 0.1",
+    "Voron 0.1": "Voron 0.1",
+    "Prusa MINI IS": "MINI"
   }
 }

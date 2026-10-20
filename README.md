@@ -2,10 +2,14 @@
 
 **Print. Eject. Repeat.**
 
-PlateLoop is a self-hosted web app that turns a sliced Bambu Lab
-`.gcode.3mf` into an **automatic multi-copy print sequence**: print → cool →
-the printer's own toolhead pushes the part off the plate into a container →
-re-heat → next copy.
+PlateLoop is a self-hosted web app that turns a sliced `.gcode.3mf`
+(Bambu Studio or OrcaSlicer) into an **automatic multi-copy print sequence**:
+print → cool → the printer's own toolhead pushes the part off the plate into a
+container → re-heat → next copy.
+
+Push behaviour is **verified on the Bambu Lab A1**. The printer database also
+covers Prusa, Creality, Elegoo, Anycubic, QIDI, Sovol and Voron geometry —
+those models are honest about being *needs a test print*.
 
 [![CI](https://github.com/joshmadison/plateloop/actions/workflows/ci.yml/badge.svg)](https://github.com/joshmadison/plateloop/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-30d158.svg)](LICENSE) [![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/) [![Docker ready](https://img.shields.io/badge/docker-ready-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 
@@ -35,8 +39,9 @@ re-heat → next copy.
   no ejector, conveyor or custom end effector.
 - **Per-object ejection.** Multiple objects on one plate are pushed off one
   by one, rear-most first, with a lift and re-park between each push.
-- **Printer-aware geometry.** 14 Bambu Lab models with slicer-derived travel
-  limits, park positions and toolhead clearance.
+- **Printer-aware geometry.** 45 models across 8 vendor families (Bambu Lab,
+  Prusa, Creality, Elegoo, Anycubic, QIDI, Sovol, Voron) with slicer-derived
+  travel limits, park positions and toolhead clearance.
 - **Safety guards.** Minimum part height, cooldown + safety wait, cooling
   checks and push-lane collision warnings before anything is built.
 - **Local and private.** No account, no cloud, no telemetry. Uploads are
@@ -111,7 +116,8 @@ required. The container healthcheck requests `/` every 30 seconds.
 
 ## Usage
 
-1. Slice your object in **Bambu Studio** (or OrcaSlicer).
+1. Slice your object in **Bambu Studio** (Bambu Lab) or **OrcaSlicer**
+   (Bambu Lab *and* the other supported vendors).
 2. Export **File → Export → Plate as .gcode.3mf** — or **All plates as
    .gcode.3mf** for a multi-plate run.
 3. Upload the file, set the prints per plate, adjust the ejection settings
@@ -172,26 +178,40 @@ total prints.
   same mechanics and are marked *expected*. CoreXY models (P1, P2, X1, X2 and
   H2 series) move the toolhead instead of the bed — plausible, but needs a
   test print.
+- Prusa, Creality, Elegoo, Anycubic, QIDI, Sovol and Voron models have **no
+  rear park zone** in their native end gcode: the pusher starts at the rear
+  bed edge, so keep the rear-most part at least ~35 mm away from it. These
+  models are all marked *needs a test print*.
 - Verify plate adhesion, container placement and the first cycle for every
   material you use.
 
 ## Supported printers
 
 The printer database ([`app/printers.json`](app/printers.json), provenance in
-[docs/PRINTER_DB_SOURCES.md](docs/PRINTER_DB_SOURCES.md)) covers 14 Bambu Lab
-models:
+[docs/PRINTER_DB_SOURCES.md](docs/PRINTER_DB_SOURCES.md)) covers 45 models in
+8 vendor families:
 
-| Status | Models |
-| --- | --- |
-| Verified | A1 |
-| Expected | A1 mini, A2L |
-| Needs a test print | P1P, P1S, P2S, X1, X1C, X1E, X2D, H2S, H2D, H2D Pro, H2C |
+| Vendor | Models | Status |
+| --- | --- | --- |
+| Bambu Lab | A1, A1 mini, A2L, P1P, P1S, P2S, X1, X1C, X1E, X2D, H2S, H2D, H2D Pro, H2C | A1 *verified*, A1 mini/A2L *expected*, rest *needs a test print* |
+| Prusa | MK4S, MK3S, MK3.5, MINI, CORE One, XL | needs a test print |
+| Creality | K1, K1C, K1 Max, K2 Plus, Ender-3 V3, Ender-3 V3 KE | needs a test print |
+| Elegoo | Centauri, Centauri Carbon, Neptune 4 Pro, Neptune 4 Max | needs a test print |
+| Anycubic | Kobra 3, Kobra 3 Max, Kobra S1, Kobra S1 Max | needs a test print |
+| QIDI | Q1 Pro, X-Plus 4, X-Max 4, Q2 | needs a test print |
+| Sovol | SV06 ACE, SV08, SV08 MAX, Zero | needs a test print |
+| Voron | 2.4 350, Trident 300, 0.1 | needs a test print |
 
 Filenames and printer-model identifiers from Bambu Studio and OrcaSlicer are
 resolved automatically — you never pick a printer manually. Unknown models
 fall back to A1 geometry and show a warning instead of silently assuming the
-wrong values. Each model's rear Y limit is tagged `verified`, `from end gcode`
-or `estimated`, so you can see what is proven.
+wrong values. Each model's rear Y limit is tagged `verified`, `from end gcode`,
+`no park zone` or `estimated`, so you can see what is proven.
+
+> Non-Bambu files must be sliced with **OrcaSlicer** and exported as
+> `.gcode.3mf`. Native PrusaSlicer `.gcode` / `.bgcode` is not supported yet.
+> The Printers page groups models by vendor and marks what still needs a test
+> print on real hardware.
 
 <p align="center">
   <img src="docs/assets/printers.png" alt="PlateLoop printer compatibility page" width="100%">
@@ -201,7 +221,7 @@ or `estimated`, so you can see what is proven.
 
 ```bash
 pip install -r requirements.txt -r requirements-dev.txt
-python -m pytest tests -q          # 57 tests
+python -m pytest tests -q          # 60 tests
 python -m ruff check app tests     # lint
 ```
 

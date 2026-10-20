@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="PlateLoop turns a sliced .gcode.3mf into an automatic multi-copy print and ejection sequence for Bambu Lab, Prusa, Creality, Elegoo, Anycubic, QIDI, Sovol and Voron printers.">
 <title>PlateLoop</title>
 <style>
 :root {
@@ -176,7 +177,7 @@ h1 b { color: var(--accent); font-weight: 680; }
 /* cards: layered, translucent material */
 .grid { display: grid; grid-template-columns: 1fr; gap: var(--space-5); align-items: start; }
 body.has-file .grid { grid-template-columns: minmax(0, 1fr) 23rem; }
-main { min-width: 0; }
+.wrap > main, .primary { min-width: 0; }
 .side { position: sticky; top: 5.75rem; display: flex; flex-direction: column; gap: var(--space-4); }
 
 .card {
@@ -630,6 +631,83 @@ kbd {
 .anim-placeholder svg { width: 2.1rem; height: 2.1rem; display: block; margin: 0 auto var(--space-2); opacity: .45; }
 
 /* printers table */
+.printers-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-2);
+}
+.printers-bar h2 { margin: 0; }
+.printers-tools { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+.printers-tools input[type=search] {
+  width: min(16rem, 60vw);
+  height: 2.4rem;
+  padding: 0 .8rem;
+  background: rgba(0, 0, 0, .28);
+  color: var(--text-1);
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-1);
+  font: inherit;
+  font-size: .86rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .45) inset;
+  transition: border-color .18s var(--ease-out), box-shadow .18s var(--ease-out), background .18s var(--ease-out);
+}
+.printers-tools input[type=search]::placeholder { color: var(--text-3); }
+.printers-tools input[type=search]:hover { border-color: rgba(255, 255, 255, .2); }
+.printers-tools input[type=search]:focus {
+  outline: none;
+  border-color: rgba(48, 209, 88, .7);
+  background: rgba(0, 0, 0, .36);
+  box-shadow: var(--focus-ring), 0 1px 2px rgba(0, 0, 0, .45) inset;
+}
+.printers-count {
+  color: var(--text-3);
+  font-size: .78rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.vendor-group {
+  margin-top: var(--space-2);
+  border: 1px solid var(--line-1);
+  border-radius: var(--radius-2);
+  background: rgba(255, 255, 255, .018);
+  overflow: hidden;
+}
+.vendor-group > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: .72rem var(--space-4);
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+  transition: background .16s var(--ease-out);
+}
+.vendor-group > summary::-webkit-details-marker { display: none; }
+.vendor-group > summary:hover { background: rgba(255, 255, 255, .03); }
+.vg-chev {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  flex: none;
+  color: var(--text-3);
+  font-size: 1.05rem;
+  line-height: 1;
+  transform: rotate(0deg);
+  transition: transform .24s var(--spring), color .16s var(--ease-out);
+}
+.vendor-group[open] .vg-chev { transform: rotate(90deg); color: var(--text-2); }
+.vg-label { font-weight: 650; letter-spacing: -.01em; }
+.vg-count { color: var(--text-3); font-size: .78rem; font-variant-numeric: tabular-nums; }
+.vg-status { margin-left: auto; display: flex; gap: .35rem; flex-wrap: wrap; justify-content: flex-end; }
+.vg-body { border-top: 1px solid var(--line-1); padding: 0 var(--space-4) var(--space-2); overflow-x: auto; }
+.vg-body table.printers { margin-top: 0; }
+.printers-empty { padding: var(--space-5) 0; text-align: center; color: var(--text-3); font-size: .86rem; }
+.printers-empty .btn { margin-left: var(--space-2); }
 table.printers { width: 100%; border-collapse: collapse; font-size: .87rem; margin-top: var(--space-2); }
 table.printers th {
   text-align: left;
@@ -828,10 +906,11 @@ footer.foot code { background: rgba(255, 255, 255, .05); border: 1px solid var(-
 </div>
 
 <div class="wrap">
+  <main>
   <!-- ============ PAGE: sequence creation ============ -->
   <div id="pageSequence">
   <div class="grid">
-    <main>
+    <div class="primary">
       <!-- upload -->
       <section class="card">
         <h2>Upload</h2>
@@ -914,7 +993,7 @@ footer.foot code { background: rgba(255, 255, 255, .05); border: 1px solid var(-
         <div id="result" aria-live="polite"></div>
         <div class="stale-note" id="staleNote">⚠ Settings changed since the last build — the file below may be outdated. <button class="btn btn-sm" onclick="openConfirm()">Rebuild</button></div>
       </section>
-    </main>
+    </div>
 
     <!-- right: sticky preview -->
     <aside class="side">
@@ -950,10 +1029,26 @@ footer.foot code { background: rgba(255, 255, 255, .05); border: 1px solid var(-
   <!-- ============ PAGE: printers ============ -->
   <div id="pagePrinters" style="display:none">
     <section class="card">
-      <h2>Printer compatibility</h2>
+      <div class="printers-bar">
+        <h2>Printer compatibility</h2>
+        <div class="printers-tools">
+          <input type="search" id="printerSearch" placeholder="Filter models…"
+                 aria-label="Filter printers" autocomplete="off" spellcheck="false">
+          <span class="printers-count" id="printerCount" aria-live="polite"></span>
+        </div>
+      </div>
+      <p class="hint">
+        Bed and toolhead geometry from the official OrcaSlicer 0.4&nbsp;mm machine profiles.
+        Only the Bambu Lab A1 is verified on hardware. All other models are marked
+        <em>needs a test print</em>: watch the first cycle before going unattended.
+        Prusa/Creality/Elegoo/Anycubic/QIDI/Sovol/Voron files must be sliced with
+        OrcaSlicer — native PrusaSlicer <code>.gcode</code>/<code>.bgcode</code> is not supported yet.
+      </p>
       <div id="printersTableWrap"></div>
     </section>
   </div><!-- /pagePrinters -->
+
+  </main>
 
   <footer class="foot">
     Always watch the first cycle before going unattended
@@ -1415,8 +1510,24 @@ function showPage(page) {
   if (page === 'printers') { window.scrollTo({ top: 0, behavior: 'instant' }); loadPrinters(); }
 }
 requestAnimationFrame(positionTabIndicator);
-function retryPrinters() { printersLoaded = false; loadPrinters(); }
+function retryPrinters() { printersLoaded = false; printersData = null; loadPrinters(); }
 let printersLoaded = false;
+let printersData = null;
+const PRINTER_GROUPS_KEY = 'plateloop.printers.open';
+
+function openPrinterGroups() {
+  try { return new Set(JSON.parse(localStorage.getItem(PRINTER_GROUPS_KEY) || '[]')); }
+  catch (e) { return new Set(); }
+}
+function savePrinterGroups(set) {
+  try { localStorage.setItem(PRINTER_GROUPS_KEY, JSON.stringify(Array.from(set))); } catch (e) { /* private mode */ }
+}
+function clearPrinterSearch() {
+  $('printerSearch').value = '';
+  renderPrinters();
+  $('printerSearch').focus();
+}
+
 async function loadPrinters() {
   if (printersLoaded) return;
   if (!$('printersTableWrap').dataset.loading) {
@@ -1436,24 +1547,84 @@ async function loadPrinters() {
     return;
   }
   const data = await resp.json();
+  printersData = data;
   printersLoaded = true;
   delete $('printersTableWrap').dataset.loading;
-  const badgeCls = { verified: 'badge ok', expected: 'badge ok', 'needs-test': 'badge info' };
-  $('printersTableWrap').innerHTML =
-      '<div style="overflow-x:auto">' +
-      '<table class="printers"><thead><tr>' +
-      '<th>Model</th><th>Print area (mm)</th><th>Rear Y limit (mm)</th><th>Kinematics</th><th>Status</th>' +
-      '</tr></thead><tbody>' +
-    data.printers.map(function (p) {
-      return '<tr>' +
-        '<td class="pname">' + esc(p.name) + '</td>' +
-        '<td class="mono">' + p.printable_x + ' × ' + p.printable_y + (p.printable_z ? ' × ' + p.printable_z : '') + '</td>' +
-        '<td class="mono">' + p.rear_command_limit + '<span class="sub">' + esc(p.rear_command_limit_label || '') + '</span></td>' +
-        '<td>' + esc(p.structure_label || p.structure) + '<span class="sub">' + esc(p.mechanism_short) + '</span></td>' +
-        '<td title="' + esc(p.note) + '"><span class="' + badgeCls[p.suitability] + '">' + esc(p.suitability_label || p.suitability) + '</span></td>' +
-        '</tr>';
-    }).join('') + '</tbody></table></div>';
+  renderPrinters();
 }
+
+function renderPrinters() {
+  const wrap = $('printersTableWrap');
+  if (!printersData || !wrap) return;
+  const q = ($('printerSearch').value || '').trim().toLowerCase();
+  const all = printersData.printers || [];
+  const vendors = printersData.vendors || [];
+  const rows = all.filter(function (p) {
+    if (!q) return true;
+    return [p.name, p.vendor_label, p.vendor, p.structure_label, p.mechanism_short,
+            p.suitability_label, p.rear_command_limit_label, p.note]
+      .join(' ').toLowerCase().indexOf(q) !== -1;
+  });
+  const badgeCls = { verified: 'badge ok', expected: 'badge ok', 'needs-test': 'badge info' };
+  const saved = openPrinterGroups();
+  let html = '';
+  vendors.forEach(function (v) {
+    const list = rows.filter(function (p) { return p.vendor === v.id; });
+    if (!list.length) return;
+    const testN = list.filter(function (p) { return p.suitability === 'needs-test'; }).length;
+    const expN = list.filter(function (p) { return p.suitability === 'expected'; }).length;
+    const okN = list.length - testN - expN;
+    const isOpen = q ? true : saved.has(v.id);
+    html +=
+      '<details class="vendor-group" data-vendor="' + esc(v.id) + '"' + (isOpen ? ' open' : '') + '>' +
+        '<summary>' +
+          '<span class="vg-chev" aria-hidden="true">›</span>' +
+          '<span class="vg-label">' + esc(v.label) + '</span>' +
+          '<span class="vg-count">' + list.length + (list.length === 1 ? ' model' : ' models') + '</span>' +
+          '<span class="vg-status">' +
+            (okN ? '<span class="badge ok">' + okN + ' verified</span>' : '') +
+            (expN ? '<span class="badge ok">' + expN + ' expected</span>' : '') +
+            (testN ? '<span class="badge info">' + testN + ' need' + (testN === 1 ? 's' : '') + ' a test</span>' : '') +
+          '</span>' +
+        '</summary>' +
+        '<div class="vg-body">' +
+          '<table class="printers"><thead><tr>' +
+            '<th scope="col">Model</th><th scope="col">Print area (mm)</th>' +
+            '<th scope="col">Rear Y limit (mm)</th><th scope="col">Kinematics</th>' +
+            '<th scope="col">Status</th>' +
+          '</tr></thead><tbody>' +
+          list.map(function (p) {
+            return '<tr>' +
+              '<td class="pname">' + esc(p.name) + '</td>' +
+              '<td class="mono">' + p.printable_x + ' × ' + p.printable_y + (p.printable_z ? ' × ' + p.printable_z : '') + '</td>' +
+              '<td class="mono">' + p.rear_command_limit + '<span class="sub">' + esc(p.rear_command_limit_label || '') + '</span></td>' +
+              '<td>' + esc(p.structure_label || p.structure) + '<span class="sub">' + esc(p.mechanism_short) + '</span></td>' +
+              '<td title="' + esc(p.note) + '"><span class="' + (badgeCls[p.suitability] || 'badge') + '">' + esc(p.suitability_label || p.suitability) + '</span></td>' +
+              '</tr>';
+          }).join('') +
+        '</tbody></table></div>' +
+      '</details>';
+  });
+  if (!html) {
+    html = '<div class="printers-empty">No model matches “' + esc(q) + '”.' +
+      ' <button class="btn btn-ghost btn-sm" onclick="clearPrinterSearch()">Clear filter</button></div>';
+  }
+  wrap.innerHTML = html;
+  $('printerCount').textContent = q
+    ? rows.length + ' of ' + all.length + ' models'
+    : all.length + ' models · ' + vendors.length + ' vendors';
+
+  // persist the user's open/closed groups (search does not overwrite it)
+  wrap.querySelectorAll('details.vendor-group').forEach(function (d) {
+    d.addEventListener('toggle', function () {
+      if (($('printerSearch').value || '').trim()) return;
+      const set = openPrinterGroups();
+      if (d.open) set.add(d.dataset.vendor); else set.delete(d.dataset.vendor);
+      savePrinterGroups(set);
+    });
+  });
+}
+$('printerSearch').addEventListener('input', renderPrinters);
 
 // ===== isometric ejection animation =====
 const COS30 = 0.8660254, SIN30 = 0.5, ZSCALE = 0.9;

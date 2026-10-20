@@ -232,9 +232,17 @@ def test_printers_api_flat_contract(client):
     """Nested printers.json is flattened for the API: labels + park provenance."""
     r = client.get("/api/printers")
     assert r.status_code == 200
-    rows = r.json()["printers"]
-    assert len(rows) >= 14
+    body = r.json()
+    rows = body["printers"]
+    assert len(rows) >= 45
+    vendors = body["vendors"]
+    assert [v["id"] for v in vendors] == ["bambu", "prusa", "creality", "elegoo",
+                                          "anycubic", "qidi", "sovol", "voron"]
+    assert vendors[0]["label"] == "Bambu Lab" and vendors[0]["count"] >= 14
+    assert all(v["count"] > 0 for v in vendors)
+
     a1 = next(p for p in rows if p["name"] == "A1")
+    assert a1["vendor"] == "bambu" and a1["vendor_label"] == "Bambu Lab"
     assert a1["printable_x"] == 256.0 and a1["printable_z"] == 256.0
     assert a1["rear_command_limit"] == 262.5
     assert a1["rear_command_limit_source"] == "verified_gcode"
@@ -246,6 +254,22 @@ def test_printers_api_flat_contract(client):
     assert a1["note"]
     h2d = next(p for p in rows if p["name"] == "H2D")
     assert h2d["rear_command_limit_label"] == "estimated"
+
+    mk4s = next(p for p in rows if p["name"] == "MK4S")
+    assert mk4s["vendor"] == "prusa" and mk4s["vendor_label"] == "Prusa Research"
+    assert mk4s["rear_command_limit_source"] == "no_park"
+    assert mk4s["rear_command_limit_label"] == "no park zone"
+    assert mk4s["rear_command_limit"] == mk4s["printable_y"] == 210.0
+    assert mk4s["suitability"] == "needs-test"
+
+    centauri = next(p for p in rows if p["name"] == "Centauri Carbon")
+    assert centauri["vendor"] == "elegoo"
+    assert centauri["rear_command_limit_source"] == "end_gcode_park"
+    assert centauri["rear_command_limit"] == 264.5
+
+    # grouped order: every vendor's rows are contiguous and ordered
+    order = [p["vendor_order"] for p in rows]
+    assert order == sorted(order)
 
 
 def test_stats_project_3mf_per_object_heights(client, project_3mf):

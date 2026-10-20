@@ -200,6 +200,13 @@ def build_ejection_snippet(
     rear_limit = kin.get("rear_command_limit", 262.0)
     front_lip = kin.get("front_lip_y", 0.0)
     printable_x = machine.get("printable", {}).get("x", 256.0)
+    no_park = kin.get("rear_command_limit_source") == "no_park"
+    park_comment = ("rear bed edge (no park zone - keep the rear-most part clear)"
+                    if no_park else "bed fully forward (park)")
+    repark_comment = ("rear bed edge (no park zone)" if no_park
+                      else "bed fully forward (re-park)")
+    final_park_comment = ("rear bed edge (final, no park zone)" if no_park
+                          else "bed fully forward (final park)")
 
     safe_z = round(max_z_height + t_lift, 2)
     push_end_y = round(front_lip, 2)
@@ -237,7 +244,7 @@ def build_ejection_snippet(
         "G1 E-6.0 F1200 ; step 1: retract filament",
         "G90",
         f"G1 Z{_fmt(safe_z)} F3000 ; step 2: lift toolhead to safe height",
-        f"G1 Y{_fmt(rear_limit)} F12000 ; step 3: bed fully forward (park)",
+        f"G1 Y{_fmt(rear_limit)} F12000 ; step 3: {park_comment}",
         f"G1 X{_fmt(plate_center_x)} F12000 ; step 4: toolhead to plate center",
         f"G1 Z{_fmt(push_z)} F600 ; step 5: descend to push height",
     ]
@@ -269,7 +276,7 @@ def build_ejection_snippet(
                 f"(clear remaining objects)"
             )
             lines.append(
-                f"G1 Y{_fmt(rear_limit)} F12000 ; step 11b: bed fully forward (re-park)"
+                f"G1 Y{_fmt(rear_limit)} F12000 ; step 11b: {repark_comment}"
             )
             lines.append(
                 f"G1 Z{_fmt(push_z)} F600 ; step 11c: descend to push height"
@@ -279,7 +286,7 @@ def build_ejection_snippet(
                 f"G1 Z{_fmt(safe_z)} F3000 ; step 11a: lift to safe height (final)"
             )
             lines.append(
-                f"G1 Y{_fmt(rear_limit)} F12000 ; step 11: bed fully forward (final park)"
+                f"G1 Y{_fmt(rear_limit)} F12000 ; step 11: {final_park_comment}"
             )
 
     lines.append(EJECT_END)
@@ -352,6 +359,8 @@ def ejection_keyframes(
     front_lip = kin.get("front_lip_y", 0.0)
     printable_x = machine.get("printable", {}).get("x", 256.0)
 
+    no_park = kin.get("rear_command_limit_source") == "no_park"
+
     safe_z = round(max_z_height + t_lift, 2)
     push_end_y = round(front_lip, 2)
     plate_center_x = round(printable_x / 2, 2)
@@ -412,7 +421,9 @@ def ejection_keyframes(
     # lift to safe_z happens in the "lift" frame / native step 2.
     add_frame("done", "Print finished - retracting filament", end_x, end_y_pos, max_z_height)
     add_frame("lift", f"Lift toolhead to safe height ({_fmt(safe_z)} mm)", end_x, end_y_pos, safe_z)
-    add_frame("park", "Bed slides fully forward - toolhead parks behind the plate",
+    add_frame("park", ("Rear bed edge - toolhead at the plate edge (no park zone)"
+                       if no_park else
+                       "Bed slides fully forward - toolhead parks behind the plate"),
               end_x, rear_limit, safe_z)
     add_frame("center", "Toolhead moves to plate center", plate_center_x, rear_limit, safe_z)
     add_frame("descend", f"Toolhead descends to push height ({_fmt(push_z)} mm)",
@@ -472,7 +483,8 @@ def ejection_keyframes(
         if remaining:
             add_frame(f"lift{cycle}", f"Lift to safe height{tag}",
                       obj["cx"], push_end_y, safe_z, obj_index=oidx, pushed_list=pushed)
-            add_frame(f"repark{cycle}", f"Bed fully forward - re-park{tag}",
+            add_frame(f"repark{cycle}", ("Rear bed edge - re-park (no park zone)" if no_park
+                                         else "Bed fully forward - re-park") + tag,
                       obj["cx"], rear_limit, safe_z, obj_index=oidx, pushed_list=pushed)
             add_frame(f"descend{cycle}", f"Descend to push height{tag}",
                       obj["cx"], rear_limit, push_z, obj_index=oidx, pushed_list=pushed)

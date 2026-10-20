@@ -2,14 +2,16 @@
 ejection paths.
 
 Data lives in printers.json (same directory) - THIS module is the loader.
-Source of truth: BambuStudio/OrcaSlicer BBL machine profiles (base 0.4
-nozzle file merged with fdm_bbl_3dp_001/002_common). Full provenance,
-URLs and commit hashes: see PRINTER_DB_SOURCES.md in the repo root.
+Geometry sources: BambuStudio/OrcaSlicer BBL machine profiles and, since
+schema v5, the OrcaSlicer machine profiles for Prusa, Creality, Elegoo,
+Anycubic, QIDI, Sovol and Voron. Full provenance, URLs and commit hashes:
+see PRINTER_DB_SOURCES.md in the repo root.
 
-Schema (printers.json, version 4 - grouped):
+Schema (printers.json, version 5 - grouped + vendor):
 
     "A1": {
       "name": "A1",
+      "vendor": "bambu",                 # key into top-level "vendors"
       "machine": {
         "printable":  {"x", "y", "z"},   # slicer printable_area/-height, mm
         "structure":  "bedslinger",      # key into top-level "structures"
@@ -18,7 +20,7 @@ Schema (printers.json, version 4 - grouped):
       "kinematics": {
         "rear_command_limit": 262.5,     # parked toolhead Y behind the plate
         "rear_command_limit_source":     # key into "provenance_levels"
-            "verified_gcode" | "end_gcode_park" | "estimate",
+            "verified_gcode" | "end_gcode_park" | "no_park" | "estimate",
         "front_lip_y": 0.0               # commanded Y at the front edge (push end)
       },
       "toolhead": {
@@ -26,7 +28,8 @@ Schema (printers.json, version 4 - grouped):
         "clearance_radius": 73.0,        # slicer extruder_clearance_max_radius
         "dist_to_rod": 56.5,             # slicer extruder_clearance_dist_to_rod
         "footprint": {"width", "depth", # APP ESTIMATE (animation + push-lane
-                      "estimated": true} # warning) - no official BBL data exists
+                      "estimated": true},# warning) - no official vendor data
+        "estimated": true                # non-Bambu: body height/footprint assumed
       },
       "suitability": "verified",         # key into "suitability_levels"
       "suitability_note": "...",
@@ -34,8 +37,13 @@ Schema (printers.json, version 4 - grouped):
     }
 
 Top-level maps are the single source of truth for display text:
-"structures" (label + mechanism_short), "suitability_levels"
-(label + description), "provenance_levels" (label + description).
+"vendors" (label + name prefixes + order), "structures" (label +
+mechanism_short), "suitability_levels" (label + description),
+"provenance_levels" (label + description).
+
+`no_park` means the vendor's native end gcode has no rear position beyond
+the printable area: the pusher starts at the bed's rear edge. Keep the
+rear-most part clear of the toolhead footprint.
 
 Coordinate conventions for this app (A1 bedslinger, derived from native
 gcode):
@@ -56,32 +64,65 @@ DEFAULT_PRINTER: str = _DATA.get("default", "A1")
 STRUCTURES: dict = _DATA.get("structures", {})
 SUITABILITY_LEVELS: dict = _DATA.get("suitability_levels", {})
 PROVENANCE_LEVELS: dict = _DATA.get("provenance_levels", {})
+VENDORS: dict = _DATA.get("vendors", {})
+
+
+def find_printer_key(model_id: str | None) -> str | None:
+    """DB key for a model id, plain name or vendor-prefixed full name.
+
+    Handles slicer model ids ('N2S', 'Creality-K1', 'MK4S'), DB names and
+    full printer names ('Bambu Lab A1', 'Prusa MK4S'). None = unknown.
+    """
+    if not model_id:
+        return None
+    value = str(model_id).strip()
+    if value in PRINTERS:
+        return value
+    if value in ALIASES and ALIASES[value] in PRINTERS:
+        return ALIASES[value]
+    for vendor in VENDORS.values():
+        for prefix in vendor.get("prefixes", []):
+            if value.startswith(prefix):
+                stripped = value[len(prefix):].strip()
+                if stripped in PRINTERS:
+                    return stripped
+                if stripped in ALIASES and ALIASES[stripped] in PRINTERS:
+                    return ALIASES[stripped]
+    return None
 
 
 def is_known_printer(model_id: str | None) -> bool:
     """True when the model id/name/alias exists in the printer database."""
-    if not model_id:
-        return False
-    return ALIASES.get(model_id, model_id) in PRINTERS
+    return find_printer_key(model_id) is not None
 
 
 def get_printer(model_id: str) -> dict:
-    """model_id: printer_model_id from slice_info.config (e.g. 'N2S' = A1)
-    or the plain printer name. Unknown models fall back to the default
-    printer (A1 geometry) - callers should surface that via
-    is_known_printer() instead of assuming the geometry is correct."""
-    name = ALIASES.get(model_id, model_id)
-    return PRINTERS.get(name, PRINTERS[DEFAULT_PRINTER])
+    """model_id: printer_model_id from slice_info.config (e.g. 'N2S' = A1,
+    'Creality-K1' = K1) or the plain/full printer name. Unknown models fall
+    back to the default printer (A1 geometry) - callers should surface that
+    via is_known_printer() instead of assuming the geometry is correct."""
+    key = find_printer_key(model_id)
+    return PRINTERS.get(key, PRINTERS[DEFAULT_PRINTER])
 
 
 def resolve_display_name(model_id: str | None, full_name: str = "") -> str:
     """Human-readable model name for the UI (single truth for all pages).
 
-    Priority: printers.json name (via key or alias) > slicer full name
-    ('Bambu Lab A1' -> 'A1') > raw model id (visible, never silent-wrong).
+    Priority: printers.json name (via key, alias, or vendor-prefixed full
+    name) > spelled-out slicer name ('X1 Carbon' -> 'X1C') > raw model id
+    (visible, never silent-wrong).
     """
+    for candidate in (model_id, full_name):
+        key = find_printer_key(candidate)
+        if key:
+            return PRINTERS[key].get("name", key)
     if full_name:
-        stripped = full_name.replace("Bambu Lab ", "").strip()
+        stripped = full_name
+        for vendor in VENDORS.values():
+            for prefix in vendor.get("prefixes", []):
+                if stripped.startswith(prefix):
+                    stripped = stripped[len(prefix):].strip()
+                    break
         # map slicer model names (incl. spelled-out variants) to DB names,
         # longest match first so 'X1 Carbon' wins over 'X1'
         spelled = {"X1 Carbon": "X1C", "X1": "X1"}
@@ -91,10 +132,4 @@ def resolve_display_name(model_id: str | None, full_name: str = "") -> str:
                       if kn and stripped == kn]
         if candidates:
             return candidates[0]
-    if not model_id:
-        return full_name or ""
-    if model_id in PRINTERS:
-        return PRINTERS[model_id].get("name", model_id)
-    if model_id in ALIASES and ALIASES[model_id] in PRINTERS:
-        return PRINTERS[ALIASES[model_id]].get("name", ALIASES[model_id])
-    return full_name or model_id
+    return full_name or model_id or ""

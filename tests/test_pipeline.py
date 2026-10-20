@@ -31,7 +31,10 @@ from app.printer_db import (  # noqa: E402
     PROVENANCE_LEVELS,
     STRUCTURES,
     SUITABILITY_LEVELS,
+    VENDORS,
     get_printer,
+    is_known_printer,
+    resolve_display_name,
 )
 from app.threemf import (  # noqa: E402
     extract_plate_gcodes,
@@ -576,16 +579,22 @@ def test_multi_object_per_object_pushes():
 
 
 def test_printer_db_valid():
-    """All printer models are valid against the schema v4 vocabulary."""
+    """All printer models are valid against the schema v5 vocabulary."""
     for name, p in PRINTERS.items():
         machine, kin, th = p["machine"], p["kinematics"], p["toolhead"]
         printable = machine["printable"]
         assert printable["x"] > 0 and printable["y"] > 0, f"{name}: bad bed"
         assert printable["z"] > 0, f"{name}: missing max height"
         assert machine["structure"] in STRUCTURES, f"{name}: unknown structure"
-        assert kin["rear_command_limit"] > printable["y"], f"{name}: rear limit must exceed bed depth"
-        assert kin["rear_command_limit_source"] in PROVENANCE_LEVELS, \
-            f"{name}: unknown park provenance"
+        assert p.get("vendor") in VENDORS, f"{name}: unknown vendor"
+        src = kin["rear_command_limit_source"]
+        assert src in PROVENANCE_LEVELS, f"{name}: unknown park provenance"
+        if src == "no_park":
+            # no rear park zone: the pusher starts at the printable rear edge
+            assert kin["rear_command_limit"] == printable["y"], name
+        else:
+            assert kin["rear_command_limit"] > printable["y"], \
+                f"{name}: rear limit must exceed bed depth"
         assert th["clearance_radius"] > 0 and th["body_height"] > 0, f"{name}: bad toolhead geometry"
         assert th["dist_to_rod"] > 0, f"{name}: missing extruder-to-rod distance"
         assert th["footprint"]["estimated"] is True, f"{name}: footprint must be flagged as estimate"
@@ -596,6 +605,71 @@ def test_printer_db_valid():
     assert a1["toolhead"]["body_height"] == 4.76
     assert a1["machine"]["printable"]["z"] == 256.0
     assert a1["kinematics"]["rear_command_limit"] == 262.5
+
+
+def test_printer_vendors_and_aliases():
+    """Vendors group the DB; slicer model ids and full names resolve to keys."""
+    assert {"bambu", "prusa", "creality", "elegoo", "anycubic", "qidi",
+            "sovol", "voron"} <= set(VENDORS)
+    for vid, vendor in VENDORS.items():
+        assert vendor["label"] and vendor["prefixes"] and vendor["order"], vid
+        assert any(p["vendor"] == vid for p in PRINTERS.values()), f"{vid}: empty"
+    assert len(PRINTERS) == 45
+
+    assert get_printer("Creality-K1")["name"] == "K1"
+    assert get_printer("Elegoo-CC")["name"] == "Centauri Carbon"
+    assert get_printer("Qidi-Q1Pro")["name"] == "Q1 Pro"
+    assert get_printer("MK4S")["vendor"] == "prusa"
+    assert is_known_printer("Prusa MK4S")
+    assert is_known_printer("Bambu Lab A1")
+    assert not is_known_printer("Unknown Maker 9000")
+
+    assert resolve_display_name("Creality-K1") == "K1"
+    assert resolve_display_name("", "Prusa MK4S") == "MK4S"
+    assert resolve_display_name("", "Bambu Lab X1 Carbon") == "X1C"
+    assert resolve_display_name("Prusa XL") == "XL"
+    assert resolve_display_name("Qidi-Q1Pro", "Qidi Q1 Pro") == "Q1 Pro"
+
+
+def test_non_bambu_ejection_uses_rear_bed_edge():
+    """no_park models start the push at the bed's rear edge, not behind it."""
+    prusa = get_printer("MK4S")
+    g = build_ejection_snippet(
+        30.0,
+        printer=prusa,
+        objects=[{"x_min": 100.0, "x_max": 150.0, "y_min": 50.0, "y_max": 100.0}],
+    )
+    assert "G1 Y210 " in g
+    assert "G1 Y0 " in g
+    assert "step 3: rear bed edge (no park zone" in g
+    assert "step 11: rear bed edge (final, no park zone)" in g
+
+
+def test_orca_prusa_file_builds_without_bambu_markers():
+    """Non-Bambu Orca exports have no EXECUTABLE_BLOCK markers - fallback mode."""
+    src = zipfile.ZipFile(io.BytesIO(make_multi_plate_3mf()))
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as out:
+        for name in src.namelist():
+            body = src.read(name)
+            if name.endswith(".gcode"):
+                body = b"\n".join(
+                    line for line in body.splitlines()
+                    if b"EXECUTABLE_BLOCK" not in line
+                    and b"MACHINE_START_GCODE_END" not in line
+                )
+            if name.endswith("slice_info.config"):
+                body = body.replace(b"N2S", b"MK4S")
+            out.writestr(name, body)
+
+    gcodes = extract_plate_gcodes(io.BytesIO(buf.getvalue()))
+    g, notes = build_multi_plate_sequence(
+        gcodes, {1: 2}, eject_enabled=True, printer=get_printer("MK4S")
+    )
+    assert g.count("plateloop auto-ejection") == 2
+    assert "step 3: rear bed edge (no park zone" in g
+    assert "re-heat for next print" in g
+    assert any("fallback append mode" in n for n in notes), notes
 
 
 def test_printer_db_corrected_values():

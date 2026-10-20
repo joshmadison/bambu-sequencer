@@ -23,6 +23,7 @@ from .printer_db import (
     PROVENANCE_LEVELS,
     STRUCTURES,
     SUITABILITY_LEVELS,
+    VENDORS,
     get_printer,
     is_known_printer,
     resolve_display_name,
@@ -109,7 +110,7 @@ async def index():
 @app.get("/api/printers")
 async def api_printers():
     """Printer compatibility table for the Printers page (flat API view)."""
-    order = {"verified": 0, "expected": 1, "needs-test": 2}
+    suit_order = {"verified": 0, "expected": 1, "needs-test": 2}
     rows = []
     for name, p in PRINTERS.items():
         machine = p.get("machine", {})
@@ -119,8 +120,13 @@ async def api_printers():
         struct = STRUCTURES.get(machine.get("structure", ""), {})
         suit = SUITABILITY_LEVELS.get(p.get("suitability", ""), {})
         prov = PROVENANCE_LEVELS.get(kin.get("rear_command_limit_source", ""), {})
+        vendor_id = p.get("vendor", "")
+        vendor = VENDORS.get(vendor_id, {})
         rows.append({
             "name": p.get("name", name),
+            "vendor": vendor_id,
+            "vendor_label": vendor.get("label", vendor_id),
+            "vendor_order": vendor.get("order", 99),
             "printable_x": printable.get("x"),
             "printable_y": printable.get("y"),
             "printable_z": printable.get("z"),
@@ -136,8 +142,14 @@ async def api_printers():
             "suitability_label": suit.get("label", p.get("suitability", "")),
             "note": p.get("suitability_note", ""),
         })
-    rows.sort(key=lambda r: (order.get(r["suitability"], 9), r["name"]))
-    return {"printers": rows}
+    rows.sort(key=lambda r: (r["vendor_order"], suit_order.get(r["suitability"], 9), r["name"]))
+    vendors = []
+    for vid, v in sorted(VENDORS.items(), key=lambda kv: kv[1].get("order", 99)):
+        count = sum(1 for r in rows if r["vendor"] == vid)
+        if count:
+            vendors.append({"id": vid, "label": v.get("label", vid),
+                            "order": v.get("order", 99), "count": count})
+    return {"printers": rows, "vendors": vendors}
 
 
 @app.post("/api/inspect")
