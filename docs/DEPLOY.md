@@ -153,9 +153,12 @@ All values live in `.env` (see `.env.example`).
 | `PLATELOOP_IMAGE` | empty | Empty builds locally; set to a GHCR image to pull instead. |
 | `MAX_UPLOAD_MB` | `100` in prod | Upload cap. Keep **≤ 95** behind Cloudflare Free. |
 | `MAX_BODY_MB` | `110` | Caddy rejects larger bodies before they reach the app. Keep it slightly above `MAX_UPLOAD_MB`. |
+| `MAX_OUTPUT_MB` | `200` | Refuse builds whose merged gcode would exceed this size. |
+| `MAX_3MF_UNCOMPRESSED_MB` | `400` | Total uncompressed 3MF limit (zip-bomb guard). |
+| `MAX_3MF_ENTRIES` | `20000` | Maximum number of entries in a 3MF archive. |
 | `RATE_LIMIT_REQUESTS` | `60` | POST `/api/*` requests per IP per window. `0` disables. |
 | `RATE_LIMIT_WINDOW_S` | `600` | Window in seconds. |
-| `MAX_CONCURRENT_REQUESTS` | `2` | Simultaneous upload/build requests across the instance. |
+| `MAX_CONCURRENT_REQUESTS` | `1` | Simultaneous upload/build requests across the instance. One at a time keeps peak memory bounded on a 2 GB container. |
 | `FORWARDED_ALLOW_IPS` | `*` in prod | Trust Caddy's `X-Forwarded-For`. Only safe because the app port is not published. |
 | `SUPPORT_URL` | upstream Ko-fi page | Support button target. Set your own URL to replace it, or empty to hide it. |
 | `SUPPORT_LABEL` | `Buy me a coffee` | Button text. |

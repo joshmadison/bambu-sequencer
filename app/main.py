@@ -52,6 +52,8 @@ log = logging.getLogger("plateloop")
 
 MAX_UPLOAD_MB = int(os.environ.get("MAX_UPLOAD_MB", "300"))
 MAX_UPLOAD_BYTES = MAX_UPLOAD_MB * 1024 * 1024
+MAX_OUTPUT_MB = int(os.environ.get("MAX_OUTPUT_MB", "200"))
+MAX_OUTPUT_BYTES = MAX_OUTPUT_MB * 1024 * 1024
 
 _STATIC = Path(__file__).parent / "static"
 
@@ -480,6 +482,17 @@ async def api_sequence(
     active = {idx: n for idx, n in selected.items() if n > 0}
     if not active:
         raise HTTPException(422, "No plates selected - set at least one plate to 1 or more prints")
+
+    # The merged gcode repeats each plate's executable block once per copy.
+    # Refuse jobs that would obviously exhaust the container's memory.
+    if MAX_OUTPUT_BYTES > 0:
+        estimated_bytes = sum(len(gcodes[idx]) * n for idx, n in active.items())
+        if estimated_bytes > MAX_OUTPUT_BYTES:
+            raise HTTPException(
+                422,
+                f"Estimated output is larger than {MAX_OUTPUT_MB} MB - "
+                "reduce prints per plate or split the job",
+            )
 
     # ----- height check per selected plate -----
     if min_height_mm > 0:

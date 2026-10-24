@@ -6,6 +6,7 @@ entity-expansion hardening); serialization uses plain ElementTree.
 import hashlib
 import io
 import json
+import os
 import re
 import xml.etree.ElementTree as ET
 import zipfile
@@ -14,6 +15,44 @@ from dataclasses import dataclass, field
 from defusedxml.ElementTree import fromstring as _safe_fromstring
 
 BAMBU_NAMESPACE = "http://schemas.microsoft.com/3dmanufacturing/core/2015/02"
+DEFAULT_MAX_UNCOMPRESSED_MB = 400
+DEFAULT_MAX_ENTRIES = 20_000
+
+
+def _limit_from_env(name: str, default: int) -> int:
+    try:
+        return max(1, int(os.environ.get(name, str(default))))
+    except ValueError:
+        return default
+
+
+def _check_zip_limits(
+    zf: zipfile.ZipFile,
+    max_uncompressed_mb: int | None = None,
+    max_entries: int | None = None,
+) -> None:
+    """Reject archives that could exhaust memory when decompressed."""
+    if max_uncompressed_mb is None:
+        max_uncompressed_mb = _limit_from_env(
+            "MAX_3MF_UNCOMPRESSED_MB", DEFAULT_MAX_UNCOMPRESSED_MB
+        )
+    if max_entries is None:
+        max_entries = _limit_from_env("MAX_3MF_ENTRIES", DEFAULT_MAX_ENTRIES)
+
+    infos = zf.infolist()
+    if len(infos) > max_entries:
+        raise ValueError(
+            f"3MF contains more than {max_entries} entries (possible zip bomb)"
+        )
+    cap = max_uncompressed_mb * 1024 * 1024
+    total = 0
+    for info in infos:
+        total += info.file_size
+        if total > cap:
+            raise ValueError(
+                f"Uncompressed 3MF exceeds the {max_uncompressed_mb} MB limit "
+                "(possible zip bomb)"
+            )
 
 
 @dataclass
@@ -512,6 +551,7 @@ def extract_thumbnail(fileobj: io.BufferedIOBase, size: str = "large", plate: in
     }
     try:
         with zipfile.ZipFile(fileobj) as zf:
+            _check_zip_limits(zf)
             all_names = zf.namelist()
             candidates = preferred.get(size, preferred["large"])
             for c in candidates:
@@ -530,6 +570,7 @@ def parse_3mf(fileobj: io.BufferedIOBase, filename: str) -> ThreeMFInfo:
     """Parse a 3MF from a file-like object."""
     info = ThreeMFInfo(filename=filename, is_gcode_3mf=False)
     with zipfile.ZipFile(fileobj) as zf:
+        _check_zip_limits(zf)
         names = zf.namelist()
         has_gcode = any(n.lower().endswith(".gcode") for n in names)
         if has_gcode:
@@ -551,6 +592,7 @@ def extract_plate_gcodes(fileobj: io.BufferedIOBase, max_uncompressed_mb: int = 
     cap = max_uncompressed_mb * 1024 * 1024
     out: dict = {}
     with zipfile.ZipFile(fileobj) as zf:
+        _check_zip_limits(zf, max_uncompressed_mb)
         gcode_files = [n for n in zf.namelist() if n.lower().endswith(".gcode")]
         if not gcode_files:
             raise ValueError("No .gcode file inside 3MF - did you slice it?")
@@ -686,6 +728,7 @@ def repack_single_plate_3mf(
     new_bytes = new_gcode.encode("utf-8")
     new_md5 = hashlib.md5(new_bytes).hexdigest().upper().encode("ascii")
     with zipfile.ZipFile(original_fileobj) as src:
+        _check_zip_limits(src)
         names = src.namelist()
         gcode_files = [n for n in names if n.lower().endswith(".gcode")]
         if not gcode_files:
