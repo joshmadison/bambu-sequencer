@@ -241,6 +241,20 @@ wrong values. Each model's rear Y limit is tagged `verified`, `from end gcode`,
   <img src="docs/assets/printers.png" alt="PlateLoop printer compatibility page" width="100%">
 </p>
 
+### Help verify a printer
+
+Only the Bambu Lab A1 is verified on real hardware today; 42 of the 45 models
+are still marked *needs a test print*. If you own one of them, you can help:
+
+1. Read the [printer test protocol](docs/PRINTER_TEST_PROTOCOL.md).
+2. Run a supervised three-copy test with a simple part.
+3. Submit a [printer verification report](https://github.com/joshmadison/plateloop/issues/new?template=printer-verification.yml)
+   with the details you have. Video and photos are optional; a short written
+   report is enough to start the review.
+
+Reports are reviewed before a model is marked *verified*. A failed test is
+useful too: it documents the model's limits.
+
 ## Development
 
 ```bash

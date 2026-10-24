@@ -70,6 +70,13 @@ def test_security_headers(client):
     assert "default-src 'self'" in response.headers["content-security-policy"]
 
 
+def test_verification_links_are_present(client):
+    html = client.get("/").text
+    assert "PRINTER_TEST_PROTOCOL.md" in html
+    assert "printer-verification.yml" in html
+    assert "Report" in html
+
+
 def test_rate_limit_returns_429(client, monkeypatch):
     monkeypatch.setattr(middleware, "RATE_LIMIT_REQUESTS", 1)
     monkeypatch.setattr(middleware, "RATE_LIMIT_WINDOW_S", 600)

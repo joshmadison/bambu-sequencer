@@ -1,0 +1,84 @@
+name: Printer verification report
+description: Share a real-hardware test. A written report is enough; video and photos are optional.
+title: "[Verification]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for testing PlateLoop on real hardware. You do **not** need a
+        video to submit. A short written report is enough to start the review;
+        video or photos help but are optional.
+
+        Please read the [test protocol](https://github.com/joshmadison/plateloop/blob/master/docs/PRINTER_TEST_PROTOCOL.md)
+        first and only test supervised. Do not include serial numbers,
+        addresses, or other private data.
+
+  - type: input
+    id: printer
+    attributes:
+      label: Printer model
+      description: Exact model as listed in the Printers tab.
+      placeholder: e.g. Prusa MK4S
+    validations:
+      required: true
+
+  - type: dropdown
+    id: result
+    attributes:
+      label: Result
+      options:
+        - Full multi-copy cycle completed
+        - One copy completed, repeat failed
+        - Print completed, ejection failed
+        - Print or adhesion failed
+        - Other (explain below)
+    validations:
+      required: true
+
+  - type: textarea
+    id: setup
+    attributes:
+      label: Setup details (optional but helpful)
+      description: Firmware, slicer, nozzle, bed/plate, material and sequence settings. Add only what you know.
+      placeholder: e.g. firmware 01.08, OrcaSlicer 2.3, 0.4 mm, textured PEI, PLA, 3 prints, 0.4 mm push, 5 mm lift, 45 °C, 60 s
+    validations:
+      required: false
+
+  - type: textarea
+    id: observations
+    attributes:
+      label: What happened?
+      description: A few sentences are enough. Mention the push, the container and anything unusual.
+      placeholder: All three copies slid off cleanly. No toolhead contact. ...
+    validations:
+      required: true
+
+  - type: input
+    id: evidence
+    attributes:
+      label: Video or photo link (optional)
+      description: A short phone video or a photo is helpful, but not required.
+      placeholder: https://youtu.be/... or https://imgur.com/...
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety checklist
+      options:
+        - label: I watched the first complete cycle and did not leave the printer unattended.
+          required: true
+        - label: I checked the rear clearance and minimum part height, placed the container at the front, and kept the push lane clear.
+          required: true
+        - label: I understand that the generated gcode changes the printer's motion and that I test at my own risk.
+          required: true
+
+  - type: input
+    id: credit
+    attributes:
+      label: Credit name (optional)
+      description: How should we credit you if the model is marked as verified?
+      placeholder: GitHub handle or name
+    validations:
+      required: false

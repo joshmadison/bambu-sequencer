@@ -745,6 +745,8 @@ table.printers tr:last-child td { border-bottom: 0; }
 table.printers td.pname { font-weight: 650; color: var(--text-1); white-space: nowrap; letter-spacing: -.005em; }
 table.printers td .sub { color: var(--text-3); font-size: .75rem; display: block; margin-top: .1rem; font-weight: 400; }
 table.printers .mono { font-variant-numeric: tabular-nums; white-space: nowrap; }
+table.printers .table-link { color: var(--accent); text-decoration: none; font-weight: 600; white-space: nowrap; }
+table.printers .table-link:hover { text-decoration: underline; }
 
 /* confirm sheet */
 .modal-back {
@@ -1071,6 +1073,18 @@ footer.foot code { background: rgba(255, 255, 255, .05); border: 1px solid var(-
         Prusa/Creality/Elegoo/Anycubic/QIDI/Sovol/Voron files must be sliced with
         OrcaSlicer — native PrusaSlicer <code>.gcode</code>/<code>.bgcode</code> is not supported yet.
       </p>
+      <div class="alert info" style="margin-bottom:var(--space-4)">
+        <div>
+          <b>Own one of these printers?</b>
+          Run the
+          <a href="https://github.com/joshmadison/plateloop/blob/master/docs/PRINTER_TEST_PROTOCOL.md"
+             target="_blank" rel="noopener noreferrer">test protocol</a>
+          and
+          <a href="https://github.com/joshmadison/plateloop/issues/new?template=printer-verification.yml"
+             target="_blank" rel="noopener noreferrer">submit a verification report</a>.
+          Every real test makes the compatibility data better.
+        </div>
+      </div>
       <div id="printersTableWrap"></div>
     </section>
   </div><!-- /pagePrinters -->
@@ -1545,6 +1559,11 @@ function retryPrinters() { printersLoaded = false; printersData = null; loadPrin
 let printersLoaded = false;
 let printersData = null;
 const PRINTER_GROUPS_KEY = 'plateloop.printers.open';
+const VERIFY_ISSUE_URL = 'https://github.com/joshmadison/plateloop/issues/new?template=printer-verification.yml&title=';
+
+function verificationUrl(model) {
+  return VERIFY_ISSUE_URL + encodeURIComponent('Printer verification: ' + model);
+}
 
 function openPrinterGroups() {
   try { return new Set(JSON.parse(localStorage.getItem(PRINTER_GROUPS_KEY) || '[]')); }
@@ -1622,7 +1641,7 @@ function renderPrinters() {
           '<table class="printers"><thead><tr>' +
             '<th scope="col">Model</th><th scope="col">Print area (mm)</th>' +
             '<th scope="col">Rear Y limit (mm)</th><th scope="col">Kinematics</th>' +
-            '<th scope="col">Status</th>' +
+            '<th scope="col">Status</th><th scope="col">Test</th>' +
           '</tr></thead><tbody>' +
           list.map(function (p) {
             return '<tr>' +
@@ -1631,6 +1650,7 @@ function renderPrinters() {
               '<td class="mono">' + p.rear_command_limit + '<span class="sub">' + esc(p.rear_command_limit_label || '') + '</span></td>' +
               '<td>' + esc(p.structure_label || p.structure) + '<span class="sub">' + esc(p.mechanism_short) + '</span></td>' +
               '<td title="' + esc(p.note) + '"><span class="' + (badgeCls[p.suitability] || 'badge') + '">' + esc(p.suitability_label || p.suitability) + '</span></td>' +
+              '<td><a class="table-link" href="' + verificationUrl(p.name) + '" target="_blank" rel="noopener noreferrer">Report</a></td>' +
               '</tr>';
           }).join('') +
         '</tbody></table></div>' +
