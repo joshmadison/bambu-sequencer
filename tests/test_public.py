@@ -29,7 +29,7 @@ def test_legal_pages_render(client):
     assert css.headers["content-type"].startswith("text/css")
 
 
-def test_support_link_is_injected(client, monkeypatch):
+def test_support_button_is_injected(client, monkeypatch):
     monkeypatch.setenv("SUPPORT_URL", "https://buymeacoffee.com/example")
     monkeypatch.setenv("SUPPORT_LABEL", "Buy me a coffee")
     html = client.get("/").text
@@ -39,6 +39,28 @@ def test_support_link_is_injected(client, monkeypatch):
     assert 'id="supportLink"' not in html
     assert 'href="/imprint"' in html
     assert 'href="/privacy"' in html
+
+
+def test_support_button_is_on_by_default(client, monkeypatch):
+    monkeypatch.delenv("SUPPORT_URL", raising=False)
+    monkeypatch.delenv("SUPPORT_LABEL", raising=False)
+    html = client.get("/").text
+    assert 'window.APP_SUPPORT_URL = "https://ko-fi.com/G4J729EFX3"' in html
+    assert 'window.APP_SUPPORT_LABEL = "Buy me a coffee"' in html
+
+
+def test_support_button_can_be_hidden(client, monkeypatch):
+    monkeypatch.setenv("SUPPORT_URL", "")
+    html = client.get("/").text
+    assert 'window.APP_SUPPORT_URL = ""' in html
+
+
+def test_privacy_uses_default_support_link(client, monkeypatch):
+    monkeypatch.delenv("SUPPORT_URL", raising=False)
+    monkeypatch.delenv("SUPPORT_LABEL", raising=False)
+    page = client.get("/privacy").text
+    assert "Ko-fi" in page
+    assert "Buy me a coffee" in page
 
 
 def test_security_headers(client):

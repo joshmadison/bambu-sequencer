@@ -157,8 +157,8 @@ All values live in `.env` (see `.env.example`).
 | `RATE_LIMIT_WINDOW_S` | `600` | Window in seconds. |
 | `MAX_CONCURRENT_REQUESTS` | `2` | Simultaneous upload/build requests across the instance. |
 | `FORWARDED_ALLOW_IPS` | `*` in prod | Trust Caddy's `X-Forwarded-For`. Only safe because the app port is not published. |
-| `SUPPORT_URL` | empty | Footer donation link (BMC, Ko-fi, …). Empty hides it. |
-| `SUPPORT_LABEL` | `Buy me a coffee` | Link text. |
+| `SUPPORT_URL` | upstream Ko-fi page | Support button target. Set your own URL to replace it, or empty to hide it. |
+| `SUPPORT_LABEL` | `Buy me a coffee` | Button text. |
 | `LEGAL_NAME`, `LEGAL_ADDRESS`, `LEGAL_EMAIL` | empty | Impressum/Datenschutz. Pages show a warning while incomplete. |
 | `LEGAL_VAT_ID` | empty | Optional VAT ID. |
 | `HOSTING_PROVIDER` | generic | Named in the privacy page. |
@@ -173,7 +173,10 @@ limit. Uploads are processed in memory; there is no volume for user data.
 
 A plain link to Ko-fi, Buy Me a Coffee or GitHub Sponsors needs **no cookie
 banner** — no script from the provider is loaded until the visitor clicks it.
-Set `SUPPORT_URL` and `SUPPORT_LABEL`; an empty URL hides the footer link.
+The upstream build shows the project's Ko-fi button by default, so a fresh
+clone works without configuration. Self-hosters can set `SUPPORT_URL` to their
+own page or set it to an empty value to hide the button. `SUPPORT_LABEL` sets
+the text.
 
 Rough fee comparison (2026, check current pricing):
 

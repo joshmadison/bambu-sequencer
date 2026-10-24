@@ -176,10 +176,11 @@ docker compose -f compose.prod.yaml up -d --build
 
 The production stack includes per-IP rate limits, a global build cap, a
 read-only container with memory/CPU limits, a 100 MB upload cap, security
-headers and a `/docs` shutdown. The German legal pages (`/impressum` and
-`/datenschutz`, legally binding) and their English translations (`/imprint` and
-`/privacy`) are generated from `.env`; fill `LEGAL_NAME`, `LEGAL_ADDRESS` and
-`LEGAL_EMAIL` before the site is public.
+headers and a `/docs` shutdown. The support button is enabled by default and
+can be pointed at another page or hidden via `SUPPORT_URL`. The German legal
+pages (`/impressum` and `/datenschutz`, legally binding) and their English
+translations (`/imprint` and `/privacy`) are generated from `.env`; fill
+`LEGAL_NAME`, `LEGAL_ADDRESS` and `LEGAL_EMAIL` before the site is public.
 
 The full walkthrough — VPS hardening, DNS, adding future apps, backups,
 Cloudflare caveats and the legal checklist — is in

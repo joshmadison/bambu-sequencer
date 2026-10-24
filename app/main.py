@@ -30,6 +30,7 @@ from .printer_db import (
     is_known_printer,
     resolve_display_name,
 )
+from .site import DEFAULT_SUPPORT_LABEL, DEFAULT_SUPPORT_URL
 from .threemf import (
     extract_plate_gcodes,
     extract_thumbnail,
@@ -114,8 +115,11 @@ async def load_gcode_3mf(file: UploadFile) -> tuple:
 @app.get("/", response_class=HTMLResponse)
 async def index():
     html = (_STATIC / "index.html").read_text(encoding="utf-8")
-    support_url = os.environ.get("SUPPORT_URL", "").strip()
-    support_label = os.environ.get("SUPPORT_LABEL", "Buy me a coffee").strip() or "Buy me a coffee"
+    support_url = os.environ.get("SUPPORT_URL", DEFAULT_SUPPORT_URL).strip()
+    support_label = (
+        os.environ.get("SUPPORT_LABEL", DEFAULT_SUPPORT_LABEL).strip()
+        or DEFAULT_SUPPORT_LABEL
+    )
     config = (
         f"window.APP_MAX_UPLOAD_MB = {MAX_UPLOAD_MB};"
         f"window.APP_SUPPORT_URL = {json.dumps(support_url).replace('</', '<\\/')};"

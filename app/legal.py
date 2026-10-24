@@ -12,6 +12,8 @@ import html
 import os
 from pathlib import Path
 
+from .site import DEFAULT_SUPPORT_LABEL, DEFAULT_SUPPORT_URL
+
 _LEGAL_DIR = Path(__file__).parent / "static" / "legal"
 _ENGLISH_PAGES = {"imprint", "privacy"}
 
@@ -54,7 +56,7 @@ def _notice(missing: list[str], lang: str) -> str:
 
 def _support_provider(lang: str) -> str:
     """Best-effort provider name for the privacy page, derived from the URL."""
-    url = _value("SUPPORT_URL").lower()
+    url = _value("SUPPORT_URL", DEFAULT_SUPPORT_URL).lower()
     if "ko-fi.com" in url:
         return "Ko-fi"
     if "buymeacoffee.com" in url:
@@ -65,7 +67,7 @@ def _support_provider(lang: str) -> str:
 
 
 def _support_section(lang: str) -> str:
-    url = _value("SUPPORT_URL")
+    url = _value("SUPPORT_URL", DEFAULT_SUPPORT_URL)
     if not url:
         if lang == "en":
             return (
@@ -76,7 +78,7 @@ def _support_section(lang: str) -> str:
             "<p>Es werden derzeit keine Spenden-Links oder externen Zahlungsdienste "
             "eingebunden.</p>"
         )
-    label = _value("SUPPORT_LABEL", "Support" if lang == "en" else "Unterstützen")
+    label = _value("SUPPORT_LABEL", DEFAULT_SUPPORT_LABEL)
     provider = _support_provider(lang)
     if lang == "en":
         return (
