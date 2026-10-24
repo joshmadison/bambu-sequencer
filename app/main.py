@@ -18,6 +18,8 @@ from .gcode_bbox import (
     parse_object_bboxes,
     print_end_position,
 )
+from .legal import render_legal
+from .middleware import PublicGuardsMiddleware
 from .printer_db import (
     PRINTERS,
     PROVENANCE_LEVELS,
@@ -35,7 +37,16 @@ from .threemf import (
     repack_single_plate_3mf,
 )
 
-app = FastAPI(title="PlateLoop", version="0.4.0")
+_DISABLE_DOCS = os.environ.get("DISABLE_DOCS", "0").strip().lower() in {"1", "true", "yes"}
+
+app = FastAPI(
+    title="PlateLoop",
+    version="0.4.0",
+    docs_url=None if _DISABLE_DOCS else "/docs",
+    redoc_url=None if _DISABLE_DOCS else "/redoc",
+    openapi_url=None if _DISABLE_DOCS else "/openapi.json",
+)
+app.add_middleware(PublicGuardsMiddleware)
 log = logging.getLogger("plateloop")
 
 MAX_UPLOAD_MB = int(os.environ.get("MAX_UPLOAD_MB", "300"))
@@ -103,8 +114,44 @@ async def load_gcode_3mf(file: UploadFile) -> tuple:
 @app.get("/", response_class=HTMLResponse)
 async def index():
     html = (_STATIC / "index.html").read_text(encoding="utf-8")
-    return html.replace("</head>",
-        f"<script>window.APP_MAX_UPLOAD_MB = {MAX_UPLOAD_MB};</script></head>")
+    support_url = os.environ.get("SUPPORT_URL", "").strip()
+    support_label = os.environ.get("SUPPORT_LABEL", "Buy me a coffee").strip() or "Buy me a coffee"
+    config = (
+        f"window.APP_MAX_UPLOAD_MB = {MAX_UPLOAD_MB};"
+        f"window.APP_SUPPORT_URL = {json.dumps(support_url).replace('</', '<\\/')};"
+        f"window.APP_SUPPORT_LABEL = {json.dumps(support_label, ensure_ascii=False).replace('</', '<\\/')};"
+    )
+    return html.replace("</head>", f"<script>{config}</script></head>")
+
+
+@app.get("/impressum", response_class=HTMLResponse)
+async def impressum():
+    return render_legal("impressum")
+
+
+@app.get("/imprint", response_class=HTMLResponse)
+async def imprint():
+    return render_legal("imprint")
+
+
+@app.get("/datenschutz", response_class=HTMLResponse)
+async def datenschutz():
+    return render_legal("datenschutz")
+
+
+@app.get("/privacy", response_class=HTMLResponse)
+async def privacy():
+    return render_legal("privacy")
+
+
+@app.get("/legal.css")
+async def legal_css():
+    css = (_STATIC / "legal" / "legal.css").read_text(encoding="utf-8")
+    return Response(
+        content=css,
+        media_type="text/css",
+        headers={"Cache-Control": "public, max-age=3600"},
+    )
 
 
 @app.get("/api/printers")
@@ -519,4 +566,14 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", "8000")))
+
+    # Single worker on purpose: the rate limiter and build cap are in-process.
+    # In production Caddy is the only reachable peer, so its X-Forwarded-For is
+    # trusted for per-client limits via FORWARDED_ALLOW_IPS=*.
+    uvicorn.run(
+        app,
+        host="0.0.0.0",
+        port=int(os.environ.get("PORT", "8000")),
+        proxy_headers=True,
+        forwarded_allow_ips=os.environ.get("FORWARDED_ALLOW_IPS", "127.0.0.1"),
+    )

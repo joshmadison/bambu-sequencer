@@ -104,12 +104,14 @@ venv/bin/python -m app.main                    # Linux / macOS
 # open http://localhost:8000
 ```
 
-### Homeserver notes
+### Homeserver vs. public hosting
 
 > [!NOTE]
-> The app has no login. It binds to `0.0.0.0` inside the container, so publish
-> it only on your LAN. If you expose it beyond your LAN, put a reverse proxy
-> with authentication in front (Traefik, Caddy, nginx, ...).
+> The app has no login. It binds to `0.0.0.0` inside the container. The plain
+> `docker-compose.yml` is meant for your LAN. For a public instance, use the
+> hardened Caddy setup in [`compose.prod.yaml`](compose.prod.yaml) and follow
+> [`docs/DEPLOY.md`](docs/DEPLOY.md): rate limits, upload caps, a read-only
+> container, TLS, subdomains and the legal pages are already prepared.
 
 Uploads are processed in memory and nothing is persisted, so no volumes are
 required. The container healthcheck requests `/` every 30 seconds.
@@ -161,6 +163,27 @@ single-plate `.gcode.3mf` whose gcode runs the plates back to back:
 
 The download is named after your file, e.g. `model_x12.gcode.3mf` for 12
 total prints.
+
+## Public hosting
+
+`compose.prod.yaml` runs PlateLoop behind Caddy with automatic HTTPS and is set
+up for more apps on other subdomains:
+
+```bash
+cp .env.example .env   # set DOMAIN, ACME_EMAIL, support link, legal details
+docker compose -f compose.prod.yaml up -d --build
+```
+
+The production stack includes per-IP rate limits, a global build cap, a
+read-only container with memory/CPU limits, a 100 MB upload cap, security
+headers and a `/docs` shutdown. The German legal pages (`/impressum` and
+`/datenschutz`, legally binding) and their English translations (`/imprint` and
+`/privacy`) are generated from `.env`; fill `LEGAL_NAME`, `LEGAL_ADDRESS` and
+`LEGAL_EMAIL` before the site is public.
+
+The full walkthrough — VPS hardening, DNS, adding future apps, backups,
+Cloudflare caveats and the legal checklist — is in
+[`docs/DEPLOY.md`](docs/DEPLOY.md).
 
 ## Safety first
 

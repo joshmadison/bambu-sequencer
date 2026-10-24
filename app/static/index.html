@@ -103,6 +103,25 @@ a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset:
   padding-top: .8rem;
   padding-bottom: .8rem;
 }
+.topbar-actions { display: flex; align-items: center; gap: .6rem; min-width: 0; }
+.support-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .4rem;
+  padding: .45rem .8rem;
+  border: 1px solid rgba(48, 209, 88, .35);
+  border-radius: 999px;
+  background: rgba(48, 209, 88, .1);
+  color: var(--accent);
+  font-size: .8rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background .18s ease, border-color .18s ease, transform .18s ease;
+}
+.support-btn:hover { background: rgba(48, 209, 88, .18); border-color: rgba(48, 209, 88, .6); transform: translateY(-1px); }
+.support-btn[hidden] { display: none !important; }
 header.top { display: flex; align-items: center; gap: var(--space-3); min-width: 0; }
 .logo {
   width: 2.35rem;
@@ -794,6 +813,10 @@ table.printers .mono { font-variant-numeric: tabular-nums; white-space: nowrap; 
 footer.foot { color: var(--text-3); font-size: .78rem; text-align: center; padding: var(--space-6) 0 var(--space-4); letter-spacing: .004em; }
 footer.foot::before { content: ""; display: block; width: 2.5rem; height: 1px; margin: 0 auto var(--space-4); background: var(--line-2); }
 footer.foot code { background: rgba(255, 255, 255, .05); border: 1px solid var(--line-1); border-radius: .3rem; padding: .06rem .3rem; font-size: .72rem; }
+.foot-links { display: flex; flex-wrap: wrap; justify-content: center; gap: .35rem .9rem; margin-top: .55rem; }
+.foot-links a { color: var(--text-2); text-decoration: none; border-bottom: 1px solid transparent; }
+.foot-links a:hover { color: var(--accent); border-color: currentColor; }
+.foot-links a[hidden] { display: none !important; }
 
 .skel {
   background: linear-gradient(90deg, rgba(255, 255, 255, .05) 25%, rgba(255, 255, 255, .1) 50%, rgba(255, 255, 255, .05) 75%);
@@ -828,6 +851,7 @@ footer.foot code { background: rgba(255, 255, 255, .05); border: 1px solid var(-
 }
 @media (max-width: 760px) {
   .topbar-inner { flex-direction: column; align-items: stretch; gap: .65rem; }
+  .topbar-actions { flex-direction: column; align-items: stretch; }
   .tabs { display: flex; width: 100%; }
   .tab { flex: 1; text-align: center; }
   .total-grid { grid-template-columns: repeat(2, 1fr); }
@@ -897,11 +921,14 @@ footer.foot code { background: rgba(255, 255, 255, .05); border: 1px solid var(-
     </div>
   </header>
 
-  <nav class="tabs" aria-label="Pages">
-    <span class="tab-indicator" aria-hidden="true"></span>
-    <button class="tab is-active" id="tabSequence" onclick="showPage('sequence')">Sequence creation</button>
-    <button class="tab" id="tabPrinters" onclick="showPage('printers')">Printers</button>
-  </nav>
+  <div class="topbar-actions">
+    <nav class="tabs" aria-label="Pages">
+      <span class="tab-indicator" aria-hidden="true"></span>
+      <button class="tab is-active" id="tabSequence" onclick="showPage('sequence')">Sequence creation</button>
+      <button class="tab" id="tabPrinters" onclick="showPage('printers')">Printers</button>
+    </nav>
+    <a id="supportButton" class="support-btn" href="#" hidden target="_blank" rel="noopener noreferrer">☕ Buy me a coffee</a>
+  </div>
   </div>
 </div>
 
@@ -1051,7 +1078,11 @@ footer.foot code { background: rgba(255, 255, 255, .05); border: 1px solid var(-
   </main>
 
   <footer class="foot">
-    Always watch the first cycle before going unattended
+    <div>Always watch the first cycle before going unattended</div>
+    <div class="foot-links">
+      <a href="/imprint">Legal notice</a>
+      <a href="/privacy">Privacy</a>
+    </div>
   </footer>
 </div>
 
@@ -2012,6 +2043,19 @@ document.addEventListener('keydown', e => {
 });
 window.addEventListener('resize', () => { positionTabIndicator(); if (anim.data) drawAnim(); });
 window.addEventListener('load', positionTabIndicator);
+
+// header: reveal the optional support button; legal links are static
+(function () {
+  const button = document.getElementById('supportButton');
+  const url = (window.APP_SUPPORT_URL || '').trim();
+  if (!button || !/^https?:\/\//i.test(url)) return;
+  const label = window.APP_SUPPORT_LABEL || 'Buy me a coffee';
+  button.href = url;
+  button.hidden = false;
+  button.title = label;
+  button.setAttribute('aria-label', label);
+  button.textContent = '☕ ' + label;
+})();
 </script>
 </body>
 </html>

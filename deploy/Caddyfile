@@ -1,0 +1,40 @@
+# Edge proxy for plateloop and future apps.
+#
+# DOMAIN and ACME_EMAIL are injected by compose.prod.yaml. Caddy obtains and
+# renews the certificate automatically once DNS points at this server and
+# ports 80/443 are reachable.
+{
+	email {$ACME_EMAIL}
+}
+
+{$DOMAIN} {
+	encode zstd gzip
+
+	header {
+		-Server
+	}
+
+	request_body {
+		max_size {$MAX_BODY_MB}MB
+	}
+
+	reverse_proxy plateloop:8000 {
+		transport http {
+			read_timeout 300s
+			write_timeout 300s
+		}
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}
+
+# Adding another app later: give it a service on the shared `proxy` network and
+# add a block below (Caddy gets a certificate for each hostname automatically).
+#
+# app2.example.com {
+# 	encode zstd gzip
+# 	reverse_proxy app2:8000
+# }

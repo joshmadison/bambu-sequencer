@@ -6,6 +6,9 @@ services:
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
+    env_file:
+      - path: .env
+        required: false
     environment:
       - TZ=UTC
       - MAX_UPLOAD_MB=300

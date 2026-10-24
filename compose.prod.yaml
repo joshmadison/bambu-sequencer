@@ -1,0 +1,72 @@
+name: plateloop
+
+services:
+  caddy:
+    image: caddy:2.9-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN:?Set DOMAIN in .env}
+      ACME_EMAIL: ${ACME_EMAIL:?Set ACME_EMAIL in .env}
+      MAX_BODY_MB: ${MAX_BODY_MB:-110}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - proxy
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  plateloop:
+    build: .
+    image: ${PLATELOOP_IMAGE:-plateloop:local}
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      PORT: "8000"
+      DISABLE_DOCS: "1"
+      # Caddy is the only reachable peer, so trust its X-Forwarded-For for
+      # per-client rate limits.
+      FORWARDED_ALLOW_IPS: "*"
+    expose:
+      - "8000"
+    networks:
+      - proxy
+    read_only: true
+    tmpfs:
+      - /tmp:size=256m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 256
+    mem_limit: 2g
+    cpus: "2.0"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  # Shared edge network. Future apps join it as an external network:
+  #   networks:
+  #     proxy:
+  #       external: true
+  #       name: proxy
+  proxy:
+    name: proxy
+
+volumes:
+  caddy_data:
+  caddy_config:
