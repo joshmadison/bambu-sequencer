@@ -77,6 +77,28 @@ def test_verification_links_are_present(client):
     assert "Report" in html
 
 
+def test_about_page(client):
+    response = client.get("/about")
+    assert response.status_code == 200
+    assert "How PlateLoop works" in response.text
+    assert "The problem it solves" in response.text
+    assert "Create a sequence" in response.text
+    assert 'href="/"' in response.text
+
+    html = client.get("/").text
+    assert 'href="/about"' in html
+
+
+def test_about_support_link_follows_env(client, monkeypatch):
+    monkeypatch.delenv("SUPPORT_URL", raising=False)
+    page = client.get("/about").text
+    assert "https://ko-fi.com/G4J729EFX3" in page
+
+    monkeypatch.setenv("SUPPORT_URL", "")
+    page = client.get("/about").text
+    assert "ko-fi.com" not in page
+
+
 def test_rate_limit_returns_429(client, monkeypatch):
     monkeypatch.setattr(middleware, "RATE_LIMIT_REQUESTS", 1)
     monkeypatch.setattr(middleware, "RATE_LIMIT_WINDOW_S", 600)

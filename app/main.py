@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import urllib.parse
+from html import escape
 from pathlib import Path
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
@@ -128,6 +129,32 @@ async def index():
         f"window.APP_SUPPORT_LABEL = {json.dumps(support_label, ensure_ascii=False).replace('</', '<\\/')};"
     )
     return html.replace("</head>", f"<script>{config}</script></head>")
+
+
+@app.get("/about", response_class=HTMLResponse)
+async def about():
+    page = (_STATIC / "about.html").read_text(encoding="utf-8")
+    support_url = os.environ.get("SUPPORT_URL", DEFAULT_SUPPORT_URL).strip()
+    support_label = (
+        os.environ.get("SUPPORT_LABEL", DEFAULT_SUPPORT_LABEL).strip()
+        or DEFAULT_SUPPORT_LABEL
+    )
+    if support_url:
+        href = escape(support_url, quote=True)
+        label = escape(support_label)
+        support_nav = (
+            f'<a href="{href}" target="_blank" rel="noopener noreferrer">{label}</a>'
+        )
+        support_cta = (
+            f'<a class="btn btn-ghost" href="{href}" target="_blank" '
+            f'rel="noopener noreferrer">☕ {label}</a>'
+        )
+    else:
+        support_nav = ""
+        support_cta = ""
+    return page.replace("{{SUPPORT_NAV}}", support_nav).replace(
+        "{{SUPPORT_CTA}}", support_cta
+    )
 
 
 @app.get("/impressum", response_class=HTMLResponse)
