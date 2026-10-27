@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/assets/logo.svg" alt="PlateLoop logo" width="88"></p>
+
 # PlateLoop
 
 **Print. Eject. Repeat.**
@@ -11,13 +13,13 @@ Push behaviour is **verified on the Bambu Lab A1**. The printer database also
 covers Prusa, Creality, Elegoo, Anycubic, QIDI, Sovol and Voron geometry —
 those models are honest about being *needs a test print*.
 
-[![CI](https://github.com/joshmadison/plateloop/actions/workflows/ci.yml/badge.svg)](https://github.com/joshmadison/plateloop/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-30d158.svg)](LICENSE) [![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/) [![Docker ready](https://img.shields.io/badge/docker-ready-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
+[![CI](https://github.com/joshmadison/plateloop/actions/workflows/ci.yml/badge.svg)](https://github.com/joshmadison/plateloop/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-f2a93b.svg)](LICENSE) [![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/) [![Docker ready](https://img.shields.io/badge/docker-ready-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 
 <p align="center">
-  <img src="docs/assets/hero.png" alt="PlateLoop interface with a loaded two-plate file and the ejection preview" width="100%">
+  <img src="docs/assets/hero.png" alt="PlateLoop with a sliced 3DBenchy set to six copies, the sequence summary and the ejection preview" width="100%">
 </p>
 <p align="center">
-  <sub>Upload once, preview the real ejection, and download one file for the whole run.</sub>
+  <sub>A sliced 3DBenchy, six copies: upload once, check the real ejection, download one file for the whole run.</sub>
 </p>
 
 ## Demo
@@ -26,7 +28,7 @@ those models are honest about being *needs a test print*.
   <img src="docs/assets/ejection.gif" alt="Animated preview of the ejection sequence" width="620">
 </p>
 <p align="center">
-  <sub>Lift → park → cool → push → re-park. The preview uses the real object positions from your file.</sub>
+  <sub>Lift → park → cool → push → the part tips over the edge and drops. The preview uses the real object positions from your file.</sub>
 </p>
 
 ## Features
@@ -39,11 +41,15 @@ those models are honest about being *needs a test print*.
   no ejector, conveyor or custom end effector.
 - **Per-object ejection.** Multiple objects on one plate are pushed off one
   by one, rear-most first, with a lift and re-park between each push.
+- **Preview before you build.** The ejection preview appears as soon as the
+  file is read and follows your settings: print → cool → push → next, with the
+  part tipping over the plate edge into the drop zone.
 - **Printer-aware geometry.** 45 models across 8 vendor families (Bambu Lab,
   Prusa, Creality, Elegoo, Anycubic, QIDI, Sovol, Voron) with slicer-derived
   travel limits, park positions and toolhead clearance.
-- **Safety guards.** Minimum part height, cooldown + safety wait, cooling
-  checks and push-lane collision warnings before anything is built.
+- **Safety guards.** Minimum part height (measured per object from the
+  gcode), cooldown + safety wait, cooling checks and push-lane collision
+  warnings before anything is built.
 - **Local and private.** No account, no cloud, no telemetry. Uploads are
   processed in memory and nothing is written to disk.
 
@@ -55,7 +61,7 @@ flowchart TD
     B --> C[Bed fully forward<br/>toolhead parks behind plate]
     C --> D[Pick rear-most object]
     D --> E[Move X to object center]
-    E --> F[Cool bed + safety wait]
+    E --> F[Cool down: fixed time or<br/>until temperature + safety wait]
     F --> G[Push: bed retracts<br/>part slides off the plate]
     G --> H{Objects left?}
     H -- yes --> D
@@ -122,10 +128,23 @@ required. The container healthcheck requests `/` every 30 seconds.
    (Bambu Lab *and* the other supported vendors).
 2. Export **File → Export → Plate as .gcode.3mf** — or **All plates as
    .gcode.3mf** for a multi-plate run.
-3. Upload the file, set the prints per plate, adjust the ejection settings
-   and check the preview.
-4. **Build sequence file**, download the `*_x<N>.gcode.3mf` and print it on
-   your Bambu printer like any other file.
+3. Upload the file. Each plate shows print time, filament, layers and its
+   **lowest object** — the part that decides whether the push works. It turns
+   red when it is below the min height check.
+4. Set the prints per plate with **−/+**; the time and filament for that plate
+   update next to it. Adjust the ejection settings if needed; values outside
+   the allowed range are marked red and block the build.
+5. Check the **ejection preview** on the right. It is ready right after the
+   upload and follows your settings.
+6. **Build sequence file**, download the `*_x<N>.gcode.3mf` and print it like
+   any other file.
+
+<p align="center">
+  <img src="docs/assets/plate-contents.png" alt="Plate summary for a 3DBenchy: render, print time, filament, layers, object height and the copies stepper" width="720">
+</p>
+<p align="center">
+  <sub>Each plate at a glance. The copies stepper shows what the run will cost in time and filament.</sub>
+</p>
 
 <p align="center">
   <img src="docs/assets/confirm.png" alt="Sequence confirmation dialog with plates, prints, filament and ejection settings" width="800">
@@ -146,10 +165,6 @@ single-plate `.gcode.3mf` whose gcode runs the plates back to back:
 - homing and leveling still run before every print,
 - the native shutdown runs only after the very last job.
 
-<p align="center">
-  <img src="docs/assets/plate-contents.png" alt="Two plates with previews, object dimensions, filament estimates and prints fields" width="720">
-</p>
-
 ## Configuration
 
 | Setting | Default | What it changes |
@@ -157,12 +172,22 @@ single-plate `.gcode.3mf` whose gcode runs the plates back to back:
 | Prints per plate | `1` | Total copies for that plate. `0` skips it. |
 | Push height | `0.4 mm` | Height of the toolhead edge above the plate during the push. |
 | Lift height | `5 mm` | Extra clearance above the tallest object before moving. |
-| Ejection bed temp | `45 °C` | Bed target for the cooldown before a part is pushed. |
-| Safety wait | `60 s` | Dwell after the bed reaches the ejection temperature. |
-| Min height check | `7 mm` | Rejects parts that are too short for a clean push. `0` disables the check. |
+| Cooldown | `Fixed time` | *Fixed time* waits a set time before every push and can never stall. *Until temperature* waits (`M190`) until the bed reaches the ejection temperature. |
+| Cooldown time | `5 min` | How long the bed cools before every push (fixed-time mode, 1–60 min). |
+| Ejection bed temp | `30 °C` | Temperature to wait for (temperature mode). In fixed-time mode the bed target is lowered to it so the heater stays off. |
+| Safety wait | `60 s` | Extra dwell after the cooldown, before the push. |
+| Min height check | `7 mm` | Rejects plates whose lowest part is too short for a clean push. Heights are measured per object from the gcode. `0` disables the check. |
 
 The download is named after your file, e.g. `model_x12.gcode.3mf` for 12
-total prints.
+total prints. The time shown in the app is the slicer's print time; cooldown
+and safety waits come on top for every copy.
+
+> [!TIP]
+> G-code cannot say "wait for 30 °C, but at most 5 minutes": `M190` waits
+> without a time limit. That is why the default is a **fixed cooldown time**,
+> which can never stall. Use *Until temperature* when you need a guaranteed
+> bed temperature — but in an enclosed printer or a warm room the bed may never
+> get that cool, and the print would wait forever.
 
 ## Public hosting
 
@@ -195,7 +220,8 @@ Cloudflare caveats and the legal checklist — is in
 
 - Point a container at the front of the printer; the part lands there.
 - Parts must be tall enough for the toolhead to catch them. The default
-  minimum is 7 mm; short parts can jam the toolhead.
+  minimum is 7 mm; short parts can jam the toolhead. The check uses the
+  lowest object on each plate, measured from the gcode.
 - Objects sharing one push lane (overlapping X range) can cascade off together
   or jam. The app warns about these layouts before building.
 - Push behavior is **verified on the Bambu Lab A1**. A1 mini and A2L share the
@@ -206,6 +232,12 @@ Cloudflare caveats and the legal checklist — is in
   rear park zone** in their native end gcode: the pusher starts at the rear
   bed edge, so keep the rear-most part at least ~35 mm away from it. These
   models are all marked *needs a test print*.
+- The default cooldown is a fixed time (5 min) and never stalls; check that
+  your parts release after it. In *Until temperature* mode the cooldown uses
+  `M190 S<temp>`: Bambu firmware waits until the bed has cooled down, but on
+  other firmware (Marlin-based in particular) `M190 S` may only wait while
+  heating, so the push could start on a warm bed. Check this during the first
+  cycle of a *needs a test print* model.
 - Verify plate adhesion, container placement and the first cycle for every
   material you use.
 
@@ -259,7 +291,7 @@ useful too: it documents the model's limits.
 
 ```bash
 pip install -r requirements.txt -r requirements-dev.txt
-python -m pytest tests -q          # 60 tests
+python -m pytest tests -q          # 85 tests
 python -m ruff check app tests     # lint
 ```
 
@@ -267,13 +299,18 @@ python -m ruff check app tests     # lint
 
 | Path | Purpose |
 | --- | --- |
-| `app/main.py` | FastAPI routes, upload limits, request validation |
+| `app/main.py` | FastAPI routes, upload limits, request validation, allow-listed static assets |
+| `app/middleware.py` | Rate limits, build cap, security headers |
+| `app/legal.py`, `app/site.py` | Legal pages from `.env`, support-link defaults |
 | `app/gcode.py` | Ejection sequence, animation keyframes, multi-plate merge |
 | `app/gcode_bbox.py` | Object bounding boxes, push-lane conflicts, print-end position |
 | `app/threemf.py` | 3MF parsing, statistics, thumbnails, single-plate repack |
 | `app/printer_db.py` | Printer database loader and model resolution |
 | `app/printers.json` | Bed, kinematics and toolhead geometry per printer |
-| `app/static/index.html` | Self-contained web UI and canvas preview |
+| `app/static/index.html` | Web UI and canvas ejection preview |
+| `app/static/about.html` | Public “How it works” page |
+| `app/static/assets/` | Shared stylesheet (`base.css`), logo, favicons, self-hosted fonts |
+| `app/static/legal/` | Impressum, Datenschutz and English translations |
 | `tests/` | API and pipeline tests, including animation/gcode parity |
 
 Ejection changes must keep `test_keyframes_mirror_gcode` green: the preview and
@@ -300,6 +337,14 @@ park positions for your model before printing, or add the model to
 Their X ranges overlap, so the rear object may shove the front one along or
 jam. Rearrange the plate, or watch the first cycle closely.
 
+**“Preview unavailable for this plate.”**
+The plate has no extrusion moves the app can read, so it cannot place the
+objects. The build itself still works; watch the first cycle closely.
+
+**A setting is outlined in red.**
+The value is outside the allowed range shown below the field. Building is
+blocked until it is fixed.
+
 **Upload fails with HTTP 413.**
 Increase `MAX_UPLOAD_MB` (Docker: see [Quick start](#quick-start)).
 
@@ -319,6 +364,15 @@ Issues and pull requests are welcome. Before opening a PR:
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+The UI ships two self-hosted typefaces under the SIL Open Font License 1.1:
+[Space Grotesk](https://github.com/floriankarsten/space-grotesk) and
+[JetBrains Mono](https://github.com/JetBrains/JetBrainsMono). Their license
+texts are in `app/static/assets/fonts/`. No font or asset is loaded from a
+third-party server.
+
+The screenshots use [3DBenchy](https://www.3dbenchy.com/) by Creative Tools,
+licensed under CC BY-ND 4.0.
 
 PlateLoop moves your printer's toolhead and bed. Verify container placement,
 plate adhesion and the first full cycle for every material and model. Use at
