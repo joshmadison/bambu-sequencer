@@ -89,14 +89,21 @@ def test_about_page(client):
     assert 'href="/about"' in html
 
 
-def test_about_support_link_follows_env(client, monkeypatch):
+def test_about_has_no_support_button(client, monkeypatch):
+    # Support stays a single, quiet entry point in the app header.
     monkeypatch.delenv("SUPPORT_URL", raising=False)
     page = client.get("/about").text
-    assert "https://ko-fi.com/G4J729EFX3" in page
-
-    monkeypatch.setenv("SUPPORT_URL", "")
-    page = client.get("/about").text
     assert "ko-fi.com" not in page
+    assert "{{" not in page
+
+
+def test_about_footer_links_english_legal_pages_only(client):
+    page = client.get("/about").text
+    footer = page[page.index("<footer>"):]
+    assert 'href="/imprint"' in footer
+    assert 'href="/privacy"' in footer
+    assert 'href="/impressum"' not in footer
+    assert 'href="/datenschutz"' not in footer
 
 
 def test_rate_limit_returns_429(client, monkeypatch):
@@ -118,3 +125,42 @@ def test_rate_limit_returns_429(client, monkeypatch):
         assert int(second.headers["retry-after"]) > 0
     finally:
         middleware.reset_limits()
+
+
+def test_brand_assets_are_served(client):
+    css = client.get("/assets/base.css")
+    assert css.status_code == 200
+    assert css.headers["content-type"].startswith("text/css")
+    assert "Space Grotesk" in css.text
+
+    for path, kind in [
+        ("/assets/logo.svg", "image/svg+xml"),
+        ("/assets/favicon.svg", "image/svg+xml"),
+        ("/favicon.ico", "image/x-icon"),
+        ("/apple-touch-icon.png", "image/png"),
+        ("/assets/fonts/space-grotesk-latin.woff2", "font/woff2"),
+        ("/assets/fonts/jetbrains-mono-latin.woff2", "font/woff2"),
+    ]:
+        response = client.get(path)
+        assert response.status_code == 200, path
+        assert response.headers["content-type"].startswith(kind), path
+        assert response.content, path
+
+    font = client.get("/assets/fonts/space-grotesk-latin.woff2")
+    assert "immutable" in font.headers["cache-control"]
+
+
+def test_assets_are_allow_listed(client):
+    for path in ["/assets/nope.css", "/assets/../main.py", "/assets/%2e%2e/main.py",
+                 "/assets/fonts", "/assets/"]:
+        assert client.get(path).status_code == 404, path
+
+
+def test_pages_use_shared_brand(client):
+    for path in ["/", "/about"]:
+        html = client.get(path).text
+        assert '/assets/base.css' in html, path
+        assert '/assets/logo.svg' in html, path
+        assert 'rel="icon"' in html, path
+    assert '@import url("/assets/base.css")' in client.get("/legal.css").text
+    assert 'rel="icon"' in client.get("/impressum").text

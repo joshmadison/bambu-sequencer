@@ -6,7 +6,6 @@ import logging
 import math
 import os
 import urllib.parse
-from html import escape
 from pathlib import Path
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
@@ -58,6 +57,24 @@ MAX_OUTPUT_MB = int(os.environ.get("MAX_OUTPUT_MB", "200"))
 MAX_OUTPUT_BYTES = MAX_OUTPUT_MB * 1024 * 1024
 
 _STATIC = Path(__file__).parent / "static"
+_ASSETS_DIR = _STATIC / "assets"
+
+# Explicit allow-list of static assets. No directory serving: only these files
+# can be fetched, so nothing else under app/ is ever exposed.
+_ASSETS = {
+    "base.css": "text/css; charset=utf-8",
+    "logo.svg": "image/svg+xml",
+    "favicon.svg": "image/svg+xml",
+    "favicon.ico": "image/x-icon",
+    "apple-touch-icon.png": "image/png",
+    "fonts/space-grotesk-latin.woff2": "font/woff2",
+    "fonts/space-grotesk-latin-ext.woff2": "font/woff2",
+    "fonts/jetbrains-mono-latin.woff2": "font/woff2",
+    "fonts/OFL-SpaceGrotesk.txt": "text/plain; charset=utf-8",
+    "fonts/OFL-JetBrainsMono.txt": "text/plain; charset=utf-8",
+}
+# Fonts never change under the same name; CSS/icons may change between releases.
+_IMMUTABLE_SUFFIXES = (".woff2",)
 
 
 # ============ upload handling ============
@@ -134,28 +151,8 @@ async def index():
 
 @app.get("/about", response_class=HTMLResponse)
 async def about():
-    page = (_STATIC / "about.html").read_text(encoding="utf-8")
-    support_url = os.environ.get("SUPPORT_URL", DEFAULT_SUPPORT_URL).strip()
-    support_label = (
-        os.environ.get("SUPPORT_LABEL", DEFAULT_SUPPORT_LABEL).strip()
-        or DEFAULT_SUPPORT_LABEL
-    )
-    if support_url:
-        href = escape(support_url, quote=True)
-        label = escape(support_label)
-        support_nav = (
-            f'<a href="{href}" target="_blank" rel="noopener noreferrer">{label}</a>'
-        )
-        support_cta = (
-            f'<a class="btn btn-ghost" href="{href}" target="_blank" '
-            f'rel="noopener noreferrer">☕ {label}</a>'
-        )
-    else:
-        support_nav = ""
-        support_cta = ""
-    return page.replace("{{SUPPORT_NAV}}", support_nav).replace(
-        "{{SUPPORT_CTA}}", support_cta
-    )
+    # The support button lives only in the app header; /about stays unobtrusive.
+    return (_STATIC / "about.html").read_text(encoding="utf-8")
 
 
 @app.get("/impressum", response_class=HTMLResponse)
@@ -186,6 +183,37 @@ async def legal_css():
         media_type="text/css",
         headers={"Cache-Control": "public, max-age=3600"},
     )
+
+
+def _asset_response(name: str) -> Response:
+    media_type = _ASSETS.get(name)
+    if media_type is None:
+        raise HTTPException(404, "Not found")
+    cache = (
+        "public, max-age=31536000, immutable"
+        if name.endswith(_IMMUTABLE_SUFFIXES)
+        else "public, max-age=86400"
+    )
+    return Response(
+        content=(_ASSETS_DIR / name).read_bytes(),
+        media_type=media_type,
+        headers={"Cache-Control": cache},
+    )
+
+
+@app.get("/assets/{name:path}")
+async def asset(name: str):
+    return _asset_response(name)
+
+
+@app.get("/favicon.ico")
+async def favicon_ico():
+    return _asset_response("favicon.ico")
+
+
+@app.get("/apple-touch-icon.png")
+async def apple_touch_icon():
+    return _asset_response("apple-touch-icon.png")
 
 
 @app.get("/api/printers")

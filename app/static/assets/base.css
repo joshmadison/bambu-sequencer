@@ -1,0 +1,170 @@
+/* PlateLoop base: brand tokens, self-hosted fonts and the build-plate
+   background. Shared by the app, /about and the legal pages.
+   Fonts: Space Grotesk + JetBrains Mono (SIL OFL 1.1), served from this
+   origin - no third-party font requests. */
+
+@font-face {
+  font-family: "Space Grotesk";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 300 700;
+  src: url("/assets/fonts/space-grotesk-latin.woff2") format("woff2-variations"),
+       url("/assets/fonts/space-grotesk-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Space Grotesk";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 300 700;
+  src: url("/assets/fonts/space-grotesk-latin-ext.woff2") format("woff2-variations"),
+       url("/assets/fonts/space-grotesk-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 800;
+  src: url("/assets/fonts/jetbrains-mono-latin.woff2") format("woff2-variations"),
+       url("/assets/fonts/jetbrains-mono-latin.woff2") format("woff2");
+}
+
+:root {
+  color-scheme: dark;
+
+  /* build plate: warm near-black with a textured-PEI gold accent */
+  --bg: #12100d;
+  --bg-deep: #0d0b09;
+  --surface-1: rgba(32, 27, 21, .74);
+  --surface-2: rgba(14, 12, 9, .55);
+  --surface-solid: #1c1813;
+  --line-1: rgba(255, 236, 205, .08);
+  --line-2: rgba(255, 236, 205, .15);
+  --text-1: #f4ede1;
+  --text-2: #c4b8a5;
+  --text-3: #958977;
+
+  --accent: #f2a93b;
+  --accent-hi: #f7bd5c;
+  --accent-lo: #d98c1f;
+  --accent-ink: #2b1a03;
+  --accent-rgb: 242, 169, 59;
+
+  /* semantic colors stay clearly apart from the gold accent */
+  --ok: #5ec4b6;
+  --ok-rgb: 94, 196, 182;
+  --warning: #ff9447;
+  --warning-rgb: 255, 148, 71;
+  --danger: #ff6b6b;
+  --danger-rgb: 255, 107, 107;
+  --info: #8ab4ff;
+  --info-rgb: 138, 180, 255;
+
+  --font-sans: "Space Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+
+  --radius-1: .6rem;
+  --radius-2: .85rem;
+  --radius-3: 1.15rem;
+  --radius-4: 1.6rem;
+  --ease-out: cubic-bezier(.16, 1, .3, 1);
+  --spring: cubic-bezier(.22, 1, .36, 1);
+  --focus-ring: 0 0 0 4px rgba(var(--accent-rgb), .2);
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--font-sans);
+  line-height: 1.55;
+  color: var(--text-1);
+  background-color: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Textured PEI sheet: two offset speckle layers, a faint 32 mm-style grid and
+   warm light from the top. Fixed so it reads like the plate under the UI. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(rgba(255, 226, 180, .055) .6px, transparent 1.1px),
+    radial-gradient(rgba(0, 0, 0, .35) .7px, transparent 1.2px),
+    linear-gradient(rgba(255, 226, 180, .022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 226, 180, .022) 1px, transparent 1px);
+  background-size: 5px 5px, 7px 7px, 64px 64px, 64px 64px;
+  background-position: 0 0, 2px 3px, -1px -1px, -1px -1px;
+}
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(1100px 560px at 8% -12%, rgba(var(--accent-rgb), .15), transparent 62%),
+    radial-gradient(900px 520px at 100% -10%, rgba(var(--ok-rgb), .06), transparent 60%),
+    radial-gradient(120% 90% at 50% 120%, rgba(0, 0, 0, .55), transparent 60%);
+}
+
+a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+::selection { background: rgba(var(--accent-rgb), .32); color: #fff; }
+:focus-visible { outline: 2px solid rgba(var(--accent-rgb), .9); outline-offset: 3px; border-radius: var(--radius-1); }
+code, kbd, .mono, .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+code { font-size: .86em; }
+
+/* brand lockup */
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: .7rem;
+  min-width: 0;
+  color: var(--text-1);
+  text-decoration: none;
+}
+.brand-mark {
+  width: 2.4rem;
+  height: 2.4rem;
+  flex: none;
+  display: block;
+  border-radius: .72rem;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, .35) inset,
+    0 10px 24px -10px rgba(var(--accent-rgb), .7),
+    0 1px 2px rgba(0, 0, 0, .55);
+}
+.wordmark {
+  font-size: 1.32rem;
+  font-weight: 700;
+  letter-spacing: -.035em;
+  line-height: 1;
+}
+.wordmark b { color: var(--accent); font-weight: 700; }
+
+/* thin, unobtrusive scrollbars */
+* { scrollbar-width: thin; scrollbar-color: rgba(255, 236, 205, .18) transparent; }
+::-webkit-scrollbar { width: .625rem; height: .625rem; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255, 236, 205, .15); border-radius: 999px; border: .18rem solid transparent; background-clip: content-box; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 236, 205, .26); background-clip: content-box; }
+
+@media (prefers-contrast: more) {
+  :root {
+    --text-2: #e0d6c6;
+    --text-3: #c0b4a2;
+    --line-1: rgba(255, 236, 205, .24);
+    --line-2: rgba(255, 236, 205, .4);
+  }
+  body::before { background-image: none; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  body::before { background-image: none; }
+}
