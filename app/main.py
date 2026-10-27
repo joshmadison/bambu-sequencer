@@ -3,6 +3,7 @@ import base64
 import io
 import json
 import logging
+import math
 import os
 import urllib.parse
 from html import escape
@@ -252,6 +253,25 @@ async def api_inspect(file: UploadFile = File(...)):
     }
 
 
+def _nearest_plate_object_name(tobj: dict, plate_objects: list) -> str | None:
+    """Name of the slicer-metadata object whose 2D box centre is closest.
+
+    Used when slice_info has no id->name map: matching by position keeps
+    each gcode object paired with its own name instead of repeating the
+    first one for every object on the plate.
+    """
+    cx = (tobj["x_min"] + tobj["x_max"]) / 2
+    cy = (tobj["y_min"] + tobj["y_max"]) / 2
+    best, best_d = None, float("inf")
+    for o in plate_objects or []:
+        if not (o.x_max > o.x_min and o.y_max > o.y_min):
+            continue
+        d = ((o.x_min + o.x_max) / 2 - cx) ** 2 + ((o.y_min + o.y_max) / 2 - cy) ** 2
+        if d < best_d:
+            best, best_d = o.name, d
+    return best
+
+
 def _fmt_duration(sec: float) -> str:
     if sec <= 0:
         return "—"
@@ -326,13 +346,17 @@ async def api_stats(file: UploadFile = File(...)):
             new_objects = []
             for gi, tobj in enumerate(true_objects):
                 share = (tobj["moves"] / total_moves) if total_moves else 0.0
-                name = tobj.get("name") or (fallback_name or f"Object {tobj['id']}")
+                name = (tobj.get("name")
+                         or _nearest_plate_object_name(tobj, p.objects)
+                         or fallback_name or f"Object {tobj['id']}")
                 entry = {
                     "multi": n_multi,
                     "plate": p.index,
                     "obj_id": tobj["id"],
                     "name": name,
-                    "height_mm": p.min_object_height or p.max_z_height,
+                    # real per-object height from the gcode; the plate-wide
+                    # value is only a fallback (it is the TALLEST object)
+                    "height_mm": tobj.get("z_max") or p.min_object_height or p.max_z_height,
                     "width_mm": round(tobj["x_max"] - tobj["x_min"], 2),
                     "depth_mm": round(tobj["y_max"] - tobj["y_min"], 2),
                     "x_min": tobj["x_min"],
@@ -495,7 +519,8 @@ async def api_sequence(
             idx = int(key)
         except (TypeError, ValueError):
             raise HTTPException(422, f"plate_prints: invalid plate index {key!r}") from None
-        if isinstance(val, bool) or not isinstance(val, (int, float)) or float(val) != int(val):
+        if (isinstance(val, bool) or not isinstance(val, (int, float))
+                or not math.isfinite(val) or float(val) != int(val)):
             raise HTTPException(
                 422, f"plate_prints: prints for plate {idx} must be an integer (got {val!r})"
             )
@@ -521,17 +546,6 @@ async def api_sequence(
                 "reduce prints per plate or split the job",
             )
 
-    # ----- height check per selected plate -----
-    if min_height_mm > 0:
-        for idx in sorted(active):
-            p = next((p for p in info.plates if p.index == idx), None)
-            if p and p.objects and p.min_object_height < min_height_mm:
-                raise HTTPException(
-                    422,
-                    f"Plate {idx}: object height {p.min_object_height}mm is below required "
-                    f"{min_height_mm}mm (risk of toolhead jam). Slice a taller object or lower the check.",
-                )
-
     # ----- per-plate objects / max_z -----
     true_printer = get_printer(info.printer_model or "A1")
     bed_limit = true_printer["machine"]["printable"]["y"] + 8.0
@@ -543,6 +557,27 @@ async def api_sequence(
         plate_objects[idx] = await run_in_threadpool(parse_object_bboxes, gcode, bed_limit, info.object_names)
         mz = (p.max_z_height if p else 0.0) or parse_max_z_height(gcode)
         plate_max_z[idx] = mz if mz > 0 else 20.0
+
+    # ----- height check per selected plate -----
+    # Prefer the per-object heights measured in the gcode: the slicer metadata
+    # has no per-object height and falls back to the plate's tallest object,
+    # which would let a flat part next to a tall one slip through.
+    if min_height_mm > 0:
+        for idx in sorted(active):
+            p = next((p for p in info.plates if p.index == idx), None)
+            measured = [o["z_max"] for o in plate_objects[idx] if o.get("z_max")]
+            if measured and len(measured) == len(plate_objects[idx]):
+                lowest = min(measured)
+            elif p and p.objects:
+                lowest = p.min_object_height
+            else:
+                continue
+            if lowest < min_height_mm:
+                raise HTTPException(
+                    422,
+                    f"Plate {idx}: object height {lowest}mm is below required "
+                    f"{min_height_mm}mm (risk of toolhead jam). Slice a taller object or lower the check.",
+                )
 
     new_gcode, _notes = await run_in_threadpool(
         build_multi_plate_sequence,

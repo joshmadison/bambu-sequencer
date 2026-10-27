@@ -3,6 +3,7 @@
 Uses V2 ejection params: t_lift, push_z, cool_temp_bed, safety_wait_s.
 """
 import io
+import json
 import sys
 import zipfile
 
@@ -380,3 +381,77 @@ def test_animation_multi_plate_selector(client, multi_3mf):
         data={"plate": "9"},
     )
     assert r.status_code == 404
+
+
+def _mixed_height_3mf() -> bytes:
+    """One plate, a 30 mm part and a 3 mm part in separate push lanes.
+
+    The plate JSON has 2D boxes only (like real Bambu output); the per-object
+    height exists only in the gcode (OBJECT_ID groups + layer Z).
+    """
+    from conftest import GCODE, PNG_1PX
+
+    layers = (
+        "G1 Z0.2 F600\n"
+        "; OBJECT_ID: 11\nG1 X40 Y120 E1.0 F6000\nG1 X80 Y150 E1.0 F6000\n"
+        "; OBJECT_ID: 22\nG1 X180 Y40 E1.0 F6000\nG1 X220 Y90 E1.0 F6000\n"
+        "G1 Z3.0 F600\n"
+        "; OBJECT_ID: 11\nG1 X40 Y120 E1.0 F6000\n"
+        "; OBJECT_ID: 22\nG1 X180 Y40 E1.0 F6000\n"
+        "G2 Z3.4 I0.5 J0 P1 F30000 ; spiral z-hop\n"
+        "G1 Z30.0 F600\n"
+        "; OBJECT_ID: 11\nG1 X80 Y150 E1.0 F6000\n"
+    )
+    g = GCODE.replace("G1 X100 Y100 E1.0 F6000\nG1 X150 Y100 E2.0 F6000\nG1 X150 Y150 E3.0 F6000\n", layers)
+    assert layers in g
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr("[Content_Types].xml", "<Types/>")
+        zf.writestr(
+            "Metadata/model_settings.config",
+            '<config><plate><metadata key="gcode_file" value="Metadata/plate_1.gcode"/></plate></config>',
+        )
+        zf.writestr("Metadata/plate_1.json", json.dumps({
+            "bbox_objects": [
+                {"area": 1.0, "bbox": [40, 80, 120, 150], "id": 11, "name": "Tall.stl"},
+                {"area": 1.0, "bbox": [180, 220, 40, 90], "id": 22, "name": "Flat.stl"},
+            ],
+            "version": 2,
+        }))
+        zf.writestr("Metadata/plate_1.png", PNG_1PX)
+        zf.writestr("Metadata/plate_1.gcode", g)
+    return buf.getvalue()
+
+
+def test_per_object_height_comes_from_gcode(client):
+    r = client.post("/api/stats", files={"file": ("mix.gcode.3mf", _mixed_height_3mf(), "application/octet-stream")})
+    assert r.status_code == 200
+    by_name = {o["name"]: o["height_mm"] for o in r.json()["objects"]}
+    assert by_name == {"Tall.stl": 30.0, "Flat.stl": 3.0}
+
+
+def test_flat_part_next_to_tall_part_fails_height_check(client):
+    data = _mixed_height_3mf()
+    r = client.post(
+        "/api/sequence",
+        files={"file": ("mix.gcode.3mf", data, "application/octet-stream")},
+        data={"plate_prints": '{"1": 1}', "min_height_mm": "7"},
+    )
+    assert r.status_code == 422
+    assert "3.0mm" in r.json()["detail"]
+
+    ok = client.post(
+        "/api/sequence",
+        files={"file": ("mix.gcode.3mf", data, "application/octet-stream")},
+        data={"plate_prints": '{"1": 1}', "min_height_mm": "0"},
+    )
+    assert ok.status_code == 200
+
+
+def test_non_finite_prints_are_rejected(client, tall_3mf):
+    r = client.post(
+        "/api/sequence",
+        files={"file": ("m.gcode.3mf", tall_3mf, "application/octet-stream")},
+        data={"plate_prints": '{"1": Infinity}'},
+    )
+    assert r.status_code == 422

@@ -60,6 +60,9 @@ def bbox_from_gcode(gcode: str, bed_limit: float = 262.0) -> dict | None:
 VAL_RE = re.compile(r"\b([XY])(-?[\d.]+)", re.IGNORECASE)
 
 OBJ_ID_RE = re.compile(r";\s*OBJECT_ID:\s*(\d+)")
+# Z of any motion command (G0/G1 travel, G2/G3 spiral z-hop): the current
+# layer height is the last commanded Z before an extrusion move.
+Z_RE = re.compile(r"^G[0-3]\b.*?\bZ(-?[\d.]+)", re.IGNORECASE)
 
 
 def parse_object_bboxes(gcode: str, bed_limit: float = 262.0, id_names: dict | None = None) -> list:
@@ -71,13 +74,24 @@ def parse_object_bboxes(gcode: str, bed_limit: float = 262.0, id_names: dict | N
     the OBJECT_ID grouping itself - only real object moves carry a marker.
     id_names: optional {str(id): name} map from slice_info.config's
     <object identify_id=...> elements - fills the 'name' field when provided.
-    Returns one bbox dict per distinct id, sorted by id, with 'moves' counts.
+    Returns one bbox dict per distinct id, sorted by id, with 'moves' counts
+    and 'z_max' - the highest Z at which that object was extruded, i.e. its
+    printed height. The plate JSON only has 2D boxes, so this is the only
+    per-object height source; the min height check depends on it.
     """
     limit_plus = bed_limit + 6.0
     stats: dict = {}
     current_id = None
+    cur_z = 0.0
     for line in gcode.splitlines():
         s = line.strip()
+        if s[:1] == "G":
+            mz = Z_RE.match(s)
+            if mz:
+                try:
+                    cur_z = float(mz.group(1))
+                except ValueError:
+                    pass
         if s.startswith(";"):
             m_id = OBJ_ID_RE.match(s)
             if m_id:
@@ -97,7 +111,9 @@ def parse_object_bboxes(gcode: str, bed_limit: float = 262.0, id_names: dict | N
         y = float(mm.group(2))
         if y < 0.0 or y > limit_plus or x < -5.0 or x > limit_plus:
             continue
-        st = stats.setdefault(current_id, {"x_min": x, "x_max": x, "y_min": y, "y_max": y, "moves": 0})
+        st = stats.setdefault(current_id, {"x_min": x, "x_max": x, "y_min": y, "y_max": y,
+                                           "moves": 0, "z_max": 0.0})
+        st["z_max"] = max(st["z_max"], cur_z)
         st["x_min"] = min(st["x_min"], x)
         st["x_max"] = max(st["x_max"], x)
         st["y_min"] = min(st["y_min"], y)
@@ -114,6 +130,8 @@ def parse_object_bboxes(gcode: str, bed_limit: float = 262.0, id_names: dict | N
             "y_max": round(st["y_max"], 2),
             "moves": st["moves"],
         }
+        if st["z_max"] > 0:
+            entry["z_max"] = round(st["z_max"], 2)
         if id_names and str(oid) in id_names:
             entry["name"] = id_names[str(oid)]
         out.append(entry)
