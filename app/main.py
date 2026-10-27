@@ -448,8 +448,10 @@ async def api_animation(
     plate: int = Form(1, ge=1, le=20),
     t_lift: float = Form(5.0, ge=1.0, le=50.0),
     push_z: float = Form(0.4, ge=0.1, le=2.0),
-    cool_temp_bed: int = Form(45, ge=20, le=100),
+    cool_temp_bed: int = Form(30, ge=20, le=100),
     safety_wait_s: int = Form(60, ge=0, le=600),
+    # 0 = wait for cool_temp_bed (M190); >0 = timed cooldown in seconds
+    cool_time_s: int = Form(300, ge=0, le=3600),
 ):
     """Animation keyframes for ONE plate, mirroring the generated ejection gcode."""
     info, _data, gcodes = await load_gcode_3mf(file)
@@ -474,6 +476,7 @@ async def api_animation(
         push_z=push_z,
         cool_temp_bed=cool_temp_bed,
         safety_wait_s=safety_wait_s,
+        cool_time_s=cool_time_s,
         printer=true_printer,
         objects=objects,
         print_end_pos=print_end_pos,
@@ -494,8 +497,10 @@ async def api_sequence(
     plate_prints: str = Form(...),
     t_lift: float = Form(5.0, ge=1.0, le=50.0),
     push_z: float = Form(0.4, ge=0.1, le=2.0),
-    cool_temp_bed: int = Form(45, ge=20, le=100),
+    cool_temp_bed: int = Form(30, ge=20, le=100),
     safety_wait_s: int = Form(60, ge=0, le=600),
+    # 0 = wait for cool_temp_bed (M190); >0 = timed cooldown in seconds
+    cool_time_s: int = Form(300, ge=0, le=3600),
     min_height_mm: float = Form(7.0, ge=0, le=100),
 ):
     """Build ONE gcode that runs all selected plates sequentially.
@@ -587,6 +592,7 @@ async def api_sequence(
         push_z=push_z,
         cool_temp_bed=cool_temp_bed,
         safety_wait_s=safety_wait_s,
+        cool_time_s=cool_time_s,
         eject_enabled=True,
         min_height_mm=min_height_mm,
         printer=true_printer,

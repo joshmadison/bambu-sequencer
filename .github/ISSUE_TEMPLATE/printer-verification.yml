@@ -40,7 +40,7 @@ body:
     attributes:
       label: Setup details (optional but helpful)
       description: Firmware, slicer, nozzle, bed/plate, material and sequence settings. Add only what you know.
-      placeholder: e.g. firmware 01.08, OrcaSlicer 2.3, 0.4 mm, textured PEI, PLA, 3 prints, 0.4 mm push, 5 mm lift, 45 °C, 60 s
+      placeholder: e.g. firmware 01.08, OrcaSlicer 2.3, 0.4 mm, textured PEI, PLA, 3 prints, 0.4 mm push, 5 mm lift, 30 °C, 60 s
     validations:
       required: false
 

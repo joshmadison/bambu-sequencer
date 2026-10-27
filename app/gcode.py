@@ -160,12 +160,22 @@ def _select_next_object(remaining: list, rear_limit: float) -> dict:
     ))
 
 
+def _fmt_duration_s(sec: int) -> str:
+    """'5 min', '90 s', '2 min 30 s' for G-code comments and preview labels."""
+    sec = int(sec)
+    m, r = divmod(sec, 60)
+    if m and r:
+        return f"{m} min {r} s"
+    return f"{m} min" if m else f"{r} s"
+
+
 def build_ejection_snippet(
     max_z_height: float,
     t_lift: float = 5.0,
     push_z: float = 0.4,
-    cool_temp_bed: int = 45,
+    cool_temp_bed: int = 30,
     safety_wait_s: int = 60,
+    cool_time_s: int = 0,
     push_speed: int = 3000,
     printer: dict | None = None,
     objects: list | None = None,
@@ -182,7 +192,12 @@ def build_ejection_snippet(
     Phase 2 (repeat until the plate is empty):
       6. Find the next object (dynamic, see _select_next_object)
       7. Toolhead X to the bbox center
-      8. Cool down to cool_temp_bed (M140 + M190 wait)
+      8. Cool down: cool_time_s == 0 -> wait for cool_temp_bed (M140 + M190);
+         cool_time_s > 0 -> lower the bed target to cool_temp_bed and wait
+         exactly that long (G4), whatever temperature the bed has reached. G-code
+         has no "wait for temperature, but at most N s", and M190 alone can
+         hang forever when the bed cannot get that cool (enclosure, warm
+         room), so the fixed time is the safe choice.
       9. Safety wait safety_wait_s (G4)
      10. Push - Y to front_lip_y (object slides over the plate's front edge)
      11. Bed fully forward - Y to rear_limit (re-park)
@@ -237,7 +252,9 @@ def build_ejection_snippet(
             f"; ejection V2: {len(objs)} object(s), safe_z={_fmt(safe_z)} "
             f"(max_z={_fmt(max_z_height)} + t_lift={_fmt(t_lift)})"
         ),
-        f"; push_z={_fmt(push_z)}, cool_temp={cool_temp_bed}C, safety_wait={safety_wait_s}s",
+        f"; push_z={_fmt(push_z)}, "
+        + (f"cool_time={int(cool_time_s)}s" if cool_time_s > 0 else f"cool_temp={cool_temp_bed}C")
+        + f", safety_wait={safety_wait_s}s",
         "; ===== Phase 1: preparation =====",
         "M400 ; wait for motion buffer clear",
         "G91",
@@ -261,8 +278,18 @@ def build_ejection_snippet(
             f"G1 X{_fmt(obj['cx'])} F12000 ; step 7{tag}: toolhead to object center "
             f"(cx={_fmt(obj['cx'])})"
         )
-        lines.append(f"M140 S{cool_temp_bed} ; step 8: set bed target to cooldown temp")
-        lines.append(f"M190 S{cool_temp_bed} ; step 8: wait until bed reached cooldown temp")
+        if cool_time_s > 0:
+            # lower the target instead of M140 S0: 'M140 S0' marks the native
+            # shutdown, which the merge and the parsers rely on
+            lines.append(
+                f"M140 S{cool_temp_bed} ; step 8: lower bed target, heater stays off while cooling"
+            )
+            lines.append(
+                f"G4 S{int(cool_time_s)} ; step 8: cool down for {_fmt_duration_s(cool_time_s)}"
+            )
+        else:
+            lines.append(f"M140 S{cool_temp_bed} ; step 8: set bed target to cooldown temp")
+            lines.append(f"M190 S{cool_temp_bed} ; step 8: wait until bed reached cooldown temp")
         lines.append(
             f"G4 S{int(safety_wait_s)} ; step 9: safety wait {safety_wait_s}s"
         )
@@ -338,8 +365,9 @@ def ejection_keyframes(
     max_z_height: float,
     t_lift: float = 5.0,
     push_z: float = 0.4,
-    cool_temp_bed: int = 45,
+    cool_temp_bed: int = 30,
     safety_wait_s: int = 60,
+    cool_time_s: int = 0,
     printer: dict | None = None,
     objects: list | None = None,
     print_end_pos: dict | None = None,
@@ -457,7 +485,9 @@ def ejection_keyframes(
 
         add_frame(f"xcycle{cycle}", f"Toolhead moves to object center{tag}",
                   obj["cx"], rear_limit, push_z, obj_index=oidx, pushed_list=pushed)
-        add_frame(f"cool{cycle}", f"Cooling to {cool_temp_bed}°C{tag}",
+        cool_label = (f"Cooling for {_fmt_duration_s(cool_time_s)}" if cool_time_s > 0
+                      else f"Cooling to {cool_temp_bed}°C")
+        add_frame(f"cool{cycle}", f"{cool_label}{tag}",
                   obj["cx"], rear_limit, push_z, obj_index=oidx, pushed_list=pushed, wait=True)
         add_frame(f"wait{cycle}", f"Safety wait {safety_wait_s}s{tag}",
                   obj["cx"], rear_limit, push_z, obj_index=oidx, pushed_list=pushed, wait=True)
@@ -517,8 +547,9 @@ def build_multi_plate_sequence(
     plate_prints: dict,
     t_lift: float = 5.0,
     push_z: float = 0.4,
-    cool_temp_bed: int = 45,
+    cool_temp_bed: int = 30,
     safety_wait_s: int = 60,
+    cool_time_s: int = 0,
     eject_enabled: bool = True,
     min_height_mm: float = 7.0,
     printer: dict | None = None,
@@ -601,6 +632,7 @@ def build_multi_plate_sequence(
                 push_z=push_z,
                 cool_temp_bed=cool_temp_bed,
                 safety_wait_s=safety_wait_s,
+                cool_time_s=cool_time_s,
                 printer=printer,
                 objects=objs,
             )

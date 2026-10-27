@@ -56,7 +56,8 @@ marked *needs a test print* until this is confirmed on hardware.
 |---|---|---|---|
 | Lift height | `t_lift` | Extra height above the tallest bounding box on the plate | 5 mm |
 | Push height | `push_z` | Gap between pusher and print plate while descending | 0.4 mm |
-| Target temperature | `cool_temp_bed` | Bed temperature to cool down to | 45 °C |
+| Target temperature | `cool_temp_bed` | Bed temperature to cool down to (temperature mode); bed target in fixed-time mode | 30 °C |
+| Cooldown time | `cool_time_s` | `0` = wait for `cool_temp_bed` (`M190`); `> 0` = fixed cooldown in seconds (`G4`), never stalls | 300 s (API/UI); 0 in the library functions |
 | Safety wait | `safety_wait_s` | Wait time after reaching the target temperature | 60 s |
 
 ### 3.2 Printer parameters (from `printers.json`, see
@@ -108,7 +109,7 @@ starts at `rear_command_limit = printable.y` instead.
 | 6 | **Find the next object** | The part whose bounding box edge is closest to the toolhead in Y (at `Y = rear_limit` = the rear-most object). |
 | 6.1 | *Tie-breaker* | On equal distance - the part whose bbox center is **closest to X = 0**. |
 | 7 | **Toolhead X position** | X to the bbox center of the chosen part. |
-| 8 | **Cool down** | Bed to `cool_temp_bed` (`M140` + `M190` wait). |
+| 8 | **Cool down** | Fixed time: `M140 S<cool_temp_bed>` + `G4 S<cool_time_s>`. Temperature mode: `M140` + `M190` wait for `cool_temp_bed`. G-code has no "wait for temperature with a timeout". |
 | 9 | **Safety wait** | Wait `safety_wait_s` (`G4`). |
 | 10 | **Push** | Y fully retract to `push_end_y` - the part is pushed forward over the plate's front edge. |
 | 11 | **Lift + bed fully forward** | First lift to `safe_z`, then Y back to `rear_limit` - this also applies after the last object: the pusher NEVER sweeps the plate at `push_z`. |

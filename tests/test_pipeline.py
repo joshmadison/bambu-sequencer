@@ -557,7 +557,7 @@ def test_multi_object_per_object_pushes():
     )
     assert "2 object(s)" in snip_m
     # V2: cooldown EVERY cycle
-    assert snip_m.count("M190 S45") == 2, f"cooldown must happen every cycle (V2): {snip_m.count('M190 S45')}"
+    assert snip_m.count("M190 S30") == 2, f"cooldown must happen every cycle (V2): {snip_m.count('M190 S30')}"
     assert "object 1/2" in snip_m and "object 2/2" in snip_m
     # collision safety: Y must NEVER increase at push_z - every re-park
     # (between objects AND the final one) requires a prior lift to safe_z.

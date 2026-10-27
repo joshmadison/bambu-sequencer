@@ -46,7 +46,8 @@ def test_sequence_five_prints(client, tall_3mf):
         "/api/sequence",
         files={"file": ("m.gcode.3mf", tall_3mf, "application/octet-stream")},
         data={"plate_prints": '{"1": 5}', "t_lift": "5", "push_z": "0.4",
-              "cool_temp_bed": "45", "safety_wait_s": "60", "min_height_mm": "7"},
+              "cool_temp_bed": "45", "cool_time_s": "0", "safety_wait_s": "60",
+              "min_height_mm": "7"},
     )
     assert r.status_code == 200
     with zipfile.ZipFile(io.BytesIO(r.content)) as zf:
@@ -60,13 +61,69 @@ def test_sequence_five_prints(client, tall_3mf):
     assert "G4 S60" in gc, "G4 S<seconds> format required"
 
 
+def _sequence_gcode(client, data_3mf, **form) -> str:
+    r = client.post(
+        "/api/sequence",
+        files={"file": ("m.gcode.3mf", data_3mf, "application/octet-stream")},
+        data={"plate_prints": '{"1": 2}', **form},
+    )
+    assert r.status_code == 200, r.text
+    with zipfile.ZipFile(io.BytesIO(r.content)) as zf:
+        return zf.read([n for n in zf.namelist() if n.endswith(".gcode")][0]).decode()
+
+
+def test_cooldown_defaults_to_timed_5_min(client, tall_3mf):
+    # Default: lower the bed target to 30 °C and wait a fixed 5 minutes.
+    # Never M190 for the ejection, so an enclosed printer cannot hang.
+    gc = _sequence_gcode(client, tall_3mf)
+    eject = gc.split("; ===== Phase 2")[1]
+    assert "M140 S30 ; step 8" in eject
+    assert "G4 S300 ; step 8: cool down for 5 min" in gc
+    assert "M190 S30" not in gc
+    # 'M140 S0' stays reserved for the single native shutdown
+    assert sum(1 for ln in gc.splitlines() if ln.strip().startswith("M140 S0")) == 1
+
+
+def test_cooldown_can_wait_for_temperature(client, tall_3mf):
+    gc = _sequence_gcode(client, tall_3mf, cool_time_s="0")
+    assert "M190 S30" in gc
+    assert "cool down for" not in gc
+
+
+def test_cooldown_time_limits(client, tall_3mf):
+    gc = _sequence_gcode(client, tall_3mf, cool_time_s="90", cool_temp_bed="35")
+    assert "G4 S90 ; step 8: cool down for 1 min 30 s" in gc
+    for bad in ("-1", "3601"):
+        r = client.post(
+            "/api/sequence",
+            files={"file": ("m.gcode.3mf", tall_3mf, "application/octet-stream")},
+            data={"plate_prints": '{"1": 1}', "cool_time_s": bad},
+        )
+        assert r.status_code == 422, bad
+
+
+def test_preview_labels_follow_cooldown_mode(client, tall_3mf):
+    def labels(**form):
+        r = client.post(
+            "/api/animation",
+            files={"file": ("m.gcode.3mf", tall_3mf, "application/octet-stream")},
+            data=form,
+        )
+        assert r.status_code == 200
+        return [f["label"] for f in r.json()["frames"]]
+
+    assert "Cooling for 5 min" in labels()
+    assert "Cooling to 30°C" in labels(cool_time_s="0")
+
+
 def test_sequence_v2_params(client, tall_3mf):
     """V2 params: t_lift, push_z, safety_wait_s all take effect."""
     r = client.post(
         "/api/sequence",
         files={"file": ("m.gcode.3mf", tall_3mf, "application/octet-stream")},
         data={"plate_prints": '{"1": 2}', "t_lift": "8", "push_z": "0.6",
-              "cool_temp_bed": "50", "safety_wait_s": "30", "min_height_mm": "0"},
+              "cool_temp_bed": "50", "cool_time_s": "0", "safety_wait_s": "30",
+              "min_height_mm": "0"},
     )
     assert r.status_code == 200
     with zipfile.ZipFile(io.BytesIO(r.content)) as zf:
